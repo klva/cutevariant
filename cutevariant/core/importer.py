@@ -39,5 +39,7 @@ def import_file(filename, engine):
     # Create default selection 
     session.add(Selection(name="all", description="all variant", count = variant_count))
     session.add(Selection(name="favoris", description="favoris", count = 0))
-    
+
     session.commit()
+    session.close()
+
