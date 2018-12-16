@@ -3,31 +3,50 @@ from ..model import Variant, Field
 import csv
 
 
+def fields_from_header(header:[str]) -> [{str: str}]:
+    for cell in header:
+        yield {'name': cell, 'value_type': 'String'}
+
+def variant_from_row(row:[str]) -> dict:
+    return {
+        'chr': row[0],
+        'pos': row[1],
+        'ref': row[2],
+        'alt': row[3],
+    }
+
+
+def reader_csv(lines:[str]):
+    """Yield, in this order:
+
+    - iterable of fields type
+    - iterable of variants
+
+    """
+    reader = csv.reader(iter(lines), delimiter="\t")
+    headers = tuple(fields_from_header(next(reader)))
+    print('HEADERS:', headers)
+    yield headers
+    yield map(variant_from_row, reader)
+
+
 class CsvReader(AbstractReader):
     def __init__(self, device):
-        super(CsvReader, self).__init__(device)
+        super().__init__(device)
+        self.fields, self.variants = reader_csv(device)
 
     def get_fields(self):
-        csvreader = csv.reader(self.device, delimiter="\t")
-        rows = next(csvreader)
-        for row in rows:
-            row = row.replace("#","")
-            yield {"name":row,"value_type":"String"}
-
-
+        for field in self.fields:
+            print('FIELD:', field)
+            yield field
+        # yield from self.fields
 
     def get_variants(self):
-        csvreader = csv.reader(self.device, delimiter="\t")
-        next(csvreader)
-        for row in csvreader:
-            variant = {}
-            variant["chr"] = row[0]
-            variant["pos"] = row[1]
-            variant["ref"] = row[2]
-            variant["alt"] = row[3]
-
+        # yield from self.variants
+        for variant in self.variants:
+            print('VARIANT:', variant)
             yield variant
 
 
-if __name__ == "__main__":
-    print("yello")
+if __name__ == '__main__':
+    print('yello')
