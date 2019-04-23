@@ -10,15 +10,21 @@ from PySide2.QtCore import *
 from PySide2.QtGui import * 
 
 
+from cutevariant.core.vql import model_from_string
 
-conn = sqlite3.connect("examples/test.db")
+
+from textx import metamodel_from_file
+hello_meta = metamodel_from_file('cutevariant/core/vql.tx')
 
 
-query = Query(conn)
-query.group_by = ("chr","pos")
-query.selection = "truc"
+a = hello_meta.model_from_str("SELECT genotype(test),chr, pos FROM variants WHERE chr=3")
 
-print(query.sql())
+
+for i in a.select.columns:
+	print(i.id)
+
+
+print(model_from_string("SELECT genotype(boby),chr, pos FROM variants WHERE genotype(boby)=3"))
 
 
 
