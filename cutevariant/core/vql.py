@@ -61,11 +61,29 @@ model_class.classes = []
 
 
 # classes used to build the raw model
-class RawCondition(metaclass=model_class):
+
+class FunctionIdentifier(metaclass=model_class):
     @property
     def value(self):
         return {
-            "field": self.id.id,
+            "function":self.name,
+            "arg": self.arg
+        }
+
+
+
+
+
+class RawCondition(metaclass=model_class):
+    @property
+    def value(self):
+
+        field = self.id.id 
+        if isinstance(self.id.id,FunctionIdentifier):
+            field = self.id.id.value
+
+        return {
+            "field": field,
             "operator": OPERATOR_FROM_LEXEM.get(self.op.op, self.op.op),
             "value": self.val if isinstance(self.val, (str, int)) else self.val.id,
         }
@@ -138,7 +156,16 @@ def model_from_string(raw_vql: str) -> dict:
 
 
 def compile_select_from_raw_model(raw_model) -> dict or tuple:
-    return tuple(column.id for column in raw_model.columns)
+
+    out = []
+    for column in raw_model.columns:
+        field = column.id 
+        if isinstance(column.id,FunctionIdentifier):
+            field = column.id.value
+        out.append(field)
+
+    return tuple(out)
+
 
 
 def compile_from_from_raw_model(raw_model) -> dict or tuple:
