@@ -150,7 +150,7 @@ class CreateCmd(metaclass=model_class):
             "cmd": "create_cmd",
             "source": self.source,
             "filter": self.filter.value if self.filter else None,
-            "target": self.target
+            "target": self.target,
         }
 
 
@@ -158,9 +158,9 @@ class SetCmd(metaclass=model_class):
     @property
     def value(self):
         return {
-        "cmd": "set_cmd",
-        "target": self.target,
-        "expression": "todo" #self.expression
+            "cmd": "set_cmd",
+            "target": self.target,
+            "expression": "todo",  # self.expression
         }
 
 

@@ -208,7 +208,6 @@ class SelectionWidget(plugin.PluginWidget):
         self.mainwindow.query_model.selection = self.selection
         self.mainwindow.query_model.load()
 
-
     @property
     def conn(self):
         return self.model.conn
@@ -427,7 +426,7 @@ class SelectionWidget(plugin.PluginWidget):
             self.tr("Type a new name"),
             self.tr("Selection name:"),
             QLineEdit.Normal,
-            self.model.record(current_index)["name"]
+            self.model.record(current_index)["name"],
         )
         if success and current_index and new_name:
             old_record = self.model.record(current_index)

@@ -98,11 +98,11 @@ def test_create_db(reader):
     conn = sqlite3.connect(":memory:")
 
     sql.create_table_fields(conn)
-    sql.insert_many_fields(conn, reader.get_fields())
+    sql.create_many_fields(conn, reader.get_fields())
     assert len(list(sql.get_fields(conn))) == len(list(reader.get_fields()))
 
     sql.create_table_samples(conn, reader.get_fields_by_category("samples"))
-    sql.insert_many_samples(conn, reader.get_samples())
+    sql.create_many_samples(conn, reader.get_samples())
     assert len(list(sql.get_samples(conn))) == len(list(reader.get_samples()))
 
     sql.create_table_annotations(conn, reader.get_fields_by_category("annotations"))
@@ -110,7 +110,7 @@ def test_create_db(reader):
 
     sql.create_table_selections(conn)
 
-    sql.insert_many_variants(conn, reader.get_variants())
+    sql.create_many_variants(conn, reader.get_variants())
 
     #  count variant with annotation
     variant_count = 0

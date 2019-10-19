@@ -10,8 +10,7 @@ from .readerfactory import create_reader
 from .sql import *
 
 
-
-def test(boby:int, test = "test"):
+def test(boby: int, test="test"):
     """Summary
     
     Args:
@@ -19,6 +18,7 @@ def test(boby:int, test = "test"):
         test (str, optional): Description
     """
     pass
+
 
 def async_import_reader(conn, reader: AbstractReader, **kwargs):
     """Import data via the given reader into a SQLite database via the given connection
@@ -30,7 +30,7 @@ def async_import_reader(conn, reader: AbstractReader, **kwargs):
     """
     # Create project
     yield 0, f"Importing data with {reader}"
-    create_project(
+    create_table_project(
         conn,
         name=kwargs.get("project_name", "UKN"),
         reference=kwargs.get("reference", "UKN"),
@@ -39,8 +39,6 @@ def async_import_reader(conn, reader: AbstractReader, **kwargs):
     yield 0, "Creating table shema..."
     # Create table fields
     create_table_fields(conn)
-
-
 
     # Create annotations tables
     create_table_annotations(conn, reader.get_extra_fields_by_category("annotations"))
@@ -56,11 +54,11 @@ def async_import_reader(conn, reader: AbstractReader, **kwargs):
 
     # Insert samples
     yield 0, "Inserting samples..."
-    insert_many_samples(conn, reader.get_samples())
+    create_many_samples(conn, reader.get_samples())
 
     # Insert fields
     yield 0, "Inserting fields..."
-    insert_many_fields(conn, reader.get_extra_fields())
+    create_many_fields(conn, reader.get_extra_fields())
 
     # yield 0, "count variants..."
     # total_variant = reader.get_variants_count()
@@ -68,7 +66,7 @@ def async_import_reader(conn, reader: AbstractReader, **kwargs):
     # Insert variants, link them to annotations and samples
     yield 0, "Inserting variants..."
     percent = 0
-    for value, message in async_insert_many_variants(conn, reader.get_extra_variants()):
+    for value, message in async_create_many_variants(conn, reader.get_extra_variants()):
 
         if reader.file_size:
             percent = reader.read_bytes / reader.file_size * 100.0
@@ -81,7 +79,11 @@ def async_import_reader(conn, reader: AbstractReader, **kwargs):
 
     # Create indexes
     yield 99, "Creating indexes..."
-    create_indexes(conn)
+    
+    create_variants_indexes(conn)
+    create_selections_indexes(conn)
+    create_annotations_indexes(conn)
+
     yield 100, "Indexes created."
 
     # session.add(Selection(name="favoris", description="favoris", count = 0))
@@ -110,6 +112,7 @@ def import_reader(conn, reader):
         #  don't show message
         pass
 
+
 def import_familly(conn, filename):
     """import *.fam file into sample table
 
@@ -133,7 +136,9 @@ def import_familly(conn, filename):
     with open(filename) as file:
         reader = csv.reader(file, delimiter="\t")
 
-        sample_map = dict([(sample["name"], sample["id"]) for sample in get_samples(conn)])
+        sample_map = dict(
+            [(sample["name"], sample["id"]) for sample in get_samples(conn)]
+        )
         sample_names = list(sample_map.keys())
 
         for line in reader:
@@ -146,23 +151,20 @@ def import_familly(conn, filename):
                 phenotype = line[5]
 
                 sexe = int(sexe) if sexe.isdigit() else 0
-                phenotype = int(phenotype) if phenotype.isdigit() else 0 
+                phenotype = int(phenotype) if phenotype.isdigit() else 0
 
                 if name in sample_names:
-                    edit_sample = {
-                        "id" : sample_map[name],
+                    new_sample = {
+                        "id": sample_map[name],
                         "fam": fam,
                         "sexe": sexe,
-                        "phenotype": phenotype
+                        "phenotype": phenotype,
                     }
 
                     if father in sample_names:
-                        edit_sample["father_id"] = sample_map[father]
-                    
+                        new_sample["father_id"] = sample_map[father]
+
                     if mother in sample_names:
-                        edit_sample["mother_id"] = sample_map[mother]
+                        new_sample["mother_id"] = sample_map[mother]
 
-                    update_sample(conn, edit_sample)
-
-            
-   
+                    update_sample(conn, new_sample)

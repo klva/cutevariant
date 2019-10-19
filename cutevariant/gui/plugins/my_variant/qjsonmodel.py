@@ -64,10 +64,7 @@ class QJsonTreeItem(object):
         return len(self._children)
 
     def row(self):
-        return (
-            self._parent._children.index(self)
-            if self._parent else 0
-        )
+        return self._parent._children.index(self) if self._parent else 0
 
     @property
     def key(self):
@@ -99,10 +96,7 @@ class QJsonTreeItem(object):
         rootItem.key = "root"
 
         if isinstance(value, dict):
-            items = (
-                sorted(value.items())
-                if sort else value.items()
-            )
+            items = sorted(value.items()) if sort else value.items()
 
             for key, value in items:
                 child = self.load(value, rootItem)
@@ -139,10 +133,9 @@ class QJsonModel(QtCore.QAbstractItemModel):
 
         """
 
-        assert isinstance(document, (dict, list, tuple)), (
-            "`document` must be of dict, list or tuple, "
-            "not %s" % type(document)
-        )
+        assert isinstance(
+            document, (dict, list, tuple)
+        ), "`document` must be of dict, list or tuple, " "not %s" % type(document)
 
         self.beginResetModel()
 
@@ -152,8 +145,6 @@ class QJsonModel(QtCore.QAbstractItemModel):
         self.endResetModel()
 
         return True
-
-
 
     def json(self, root=None):
         """Serialise model as JSON-compliant dictionary
@@ -279,7 +270,7 @@ class QJsonModel(QtCore.QAbstractItemModel):
             return item.value
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     app = QtWidgets.QApplication(sys.argv)
@@ -288,7 +279,8 @@ if __name__ == '__main__':
 
     view.setModel(model)
 
-    document = json.loads("""\
+    document = json.loads(
+        """\
     {
         "firstName": "John",
         "lastName": "Smith",
@@ -310,16 +302,16 @@ if __name__ == '__main__':
             }
         ]
     }
-    """)
+    """
+    )
 
     model.load(document)
     model.clear()
     model.load(document)
 
     # Sanity check
-    assert (
-        json.dumps(model.json(), sort_keys=True) ==
-        json.dumps(document, sort_keys=True)
+    assert json.dumps(model.json(), sort_keys=True) == json.dumps(
+        document, sort_keys=True
     )
 
     view.show()

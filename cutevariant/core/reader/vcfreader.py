@@ -8,7 +8,13 @@ from cutevariant.commons import logger
 
 LOGGER = logger()
 
-VCF_TYPE_MAPPING = {"Float": "float", "Integer": "int", "Flag": "bool", "String": "str","Character":"str"}
+VCF_TYPE_MAPPING = {
+    "Float": "float",
+    "Integer": "int",
+    "Flag": "bool",
+    "String": "str",
+    "Character": "str",
+}
 
 
 class VcfReader(AbstractReader):
@@ -121,7 +127,7 @@ class VcfReader(AbstractReader):
                     "alt": str(alt),
                     "rsid": record.ID,  # Avoid id column duplication in DB
                     "qual": record.QUAL,
-                    "filter": "" if record.FILTER is None else ",".join(record.FILTER)
+                    "filter": "" if record.FILTER is None else ",".join(record.FILTER),
                 }
 
                 # Parse info
@@ -140,7 +146,7 @@ class VcfReader(AbstractReader):
                         sample_data = {}
                         sample_data["name"] = sample.sample
 
-                        # Load sample annotations 
+                        #  Load sample annotations
                         sample_ann = {}
                         for key in formats:
                             try:
@@ -149,13 +155,11 @@ class VcfReader(AbstractReader):
                                     value = ",".join([str(i) for i in value])
                                 sample_ann[str.lower(key)] = value
                             except:
-                                LOGGER.debug(f"VCFReader::parse: {key} not defined in genotype ")
-
-
-
+                                LOGGER.debug(
+                                    f"VCFReader::parse: {key} not defined in genotype "
+                                )
 
                         sample_data.update(sample_ann)
-
 
                         sample_data["gt"] = (
                             -1 if sample.gt_type == None else sample.gt_type

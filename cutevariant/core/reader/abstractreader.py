@@ -16,6 +16,7 @@ class AbstractReader(ABC):
             reader = Reader()
             reader.get_variants()
     """
+
     BANNED_CHARS = []
 
     def __init__(self, device):
@@ -113,11 +114,26 @@ class AbstractReader(ABC):
     def get_extra_fields(self):
         """Yield fields with extra mandatory fields like 'comment' and 'score'
         """
-        yield {"name": "favorite", "type": "bool", "category": "variants", "description": "is favorite"}
-        yield {"name": "comment", "type": "str", "category": "variants", "description": "Variant comment"}
-        yield {"name": "classification", "type": "int", "category": "variants", "description": "ACMG score"}
+        yield {
+            "name": "favorite",
+            "type": "bool",
+            "category": "variants",
+            "description": "is favorite",
+        }
+        yield {
+            "name": "comment",
+            "type": "str",
+            "category": "variants",
+            "description": "Variant comment",
+        }
+        yield {
+            "name": "classification",
+            "type": "int",
+            "category": "variants",
+            "description": "ACMG score",
+        }
         yield from self.get_fields()
-        
+
     def get_extra_variants(self):
         """Yield fields with extra mandatory value like comment and score
         """
@@ -134,8 +150,9 @@ class AbstractReader(ABC):
         :return: A generator of fields
         :rtype: <generator>
         """
-        return (field for field in self.get_extra_fields() if field["category"] == category)
-        
+        return (
+            field for field in self.get_extra_fields() if field["category"] == category
+        )
 
     def get_fields_by_category(self, category: str):
         """Syntaxic suggar to get fields according their category
@@ -157,6 +174,7 @@ class AbstractReader(ABC):
         Override this method to have samples in sqlite database.
         """
         return self.samples
+
 
 def check_variant_schema(variant: dict):
     """Test if get_variant returns well formated nested data.
@@ -190,11 +208,10 @@ def check_variant_schema(variant: dict):
             ],
             Optional("samples"): [
                 {
-                    "name": str, 
+                    "name": str,
                     "gt": And(int, lambda x: x in [-1, 0, 1, 2]),
-                    Optional(str): Or(int, str, bool, float)
-                    
-                    }
+                    Optional(str): Or(int, str, bool, float),
+                }
             ],
         }
     )

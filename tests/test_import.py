@@ -10,12 +10,11 @@ import os
 from .utils import table_exists
 
 READERS = [
-FakeReader(),
-VcfReader(open("examples/test.vcf")),
-VcfReader(open("examples/test.snpeff.vcf"),"snpeff"),
-VcfReader(open("examples/test.vep.vcf"),"vep"),
+    FakeReader(),
+    VcfReader(open("examples/test.vcf")),
+    VcfReader(open("examples/test.snpeff.vcf"), "snpeff"),
+    VcfReader(open("examples/test.vep.vcf"), "vep"),
 ]
-
 
 
 @pytest.mark.parametrize(
@@ -26,16 +25,15 @@ def test_import(reader):
     import_reader(conn, reader)
 
 
-
 def test_import_familly():
-    reader = VcfReader(open("examples/test.snpeff.vcf"),"snpeff") 
+    reader = VcfReader(open("examples/test.snpeff.vcf"), "snpeff")
     conn = sqlite3.connect(":memory:")
     import_reader(conn, reader)
 
     import_familly(conn, "examples/test.snpeff.pedigree.tfam")
-    
-    # This file contains 2 samples : TUMOR and NORMAL
-    # Let's assume this is 2 patients name 
+
+    #  This file contains 2 samples : TUMOR and NORMAL
+    #  Let's assume this is 2 patients name
 
 
 # def test_import_file_vcf_gz(conn):

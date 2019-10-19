@@ -19,6 +19,7 @@ from cutevariant.core import sql, get_sql_connexion
 
 from cutevariant.gui.plugin import PluginWidget
 
+
 class InfoVariantWidget(PluginWidget):
     """Plugin to show all annotations of a selected variant"""
 
@@ -26,9 +27,9 @@ class InfoVariantWidget(PluginWidget):
         ("Classe 0", "Unclassed"),
         ("Classe 1", "Benin"),
         ("Classe 2", "Likely benin"),
-        ("Classe 3","Unsignificant variant"),
-        ("Classe 4","Probably Pathogen"),
-        ("Classe 5","Pathogen")
+        ("Classe 3", "Unsignificant variant"),
+        ("Classe 4", "Probably Pathogen"),
+        ("Classe 5", "Pathogen"),
     ]
 
     def __init__(self):
@@ -38,18 +39,17 @@ class InfoVariantWidget(PluginWidget):
 
         self.view = QTabWidget()
 
-
-        # Editor 
+        # Editor
         self.classification_box = QComboBox()
         self.favorite_checkbox = QCheckBox()
         self.comment_input = QTextEdit()
         self.save_button = QPushButton("Save")
-        for a,b in self.ACMG_CLASSIFICATION:
-            self.classification_box.addItem(a,b)
+        for a, b in self.ACMG_CLASSIFICATION:
+            self.classification_box.addItem(a, b)
 
         self.editor = QWidget()
         editor_layout = QFormLayout()
-        #editor_layout.setRowWrapPolicy(QFormLayout.WrapAllRows)
+        # editor_layout.setRowWrapPolicy(QFormLayout.WrapAllRows)
         editor_layout.addRow("Classification", self.classification_box)
         editor_layout.addRow("Is Saved", self.favorite_checkbox)
         editor_layout.addRow("Comments", self.comment_input)
@@ -58,46 +58,41 @@ class InfoVariantWidget(PluginWidget):
         self.view.addTab(self.editor, "User")
         self.save_button.clicked.connect(self.on_save_clicked)
 
-
-        # Build variant tab 
+        # Build variant tab
         self.variant_view = QTreeWidget()
         self.variant_view.setColumnCount(2)
-        self.variant_view.setHeaderLabels(["Field","Value"])
+        self.variant_view.setHeaderLabels(["Field", "Value"])
         self.view.addTab(self.variant_view, "Variants")
-        
 
-
-        # build transcript tab 
+        # build transcript tab
         self.transcript_combo = QComboBox()
         self.transcript_view = QTreeWidget()
         self.transcript_view.setColumnCount(2)
-        self.transcript_view.setHeaderLabels(["Field","Value"])
+        self.transcript_view.setHeaderLabels(["Field", "Value"])
         tx_layout = QVBoxLayout()
         tx_layout.addWidget(self.transcript_combo)
         tx_layout.addWidget(self.transcript_view)
         tx_widget = QWidget()
         tx_widget.setLayout(tx_layout)
-        self.view.addTab(tx_widget,"Transcripts")
+        self.view.addTab(tx_widget, "Transcripts")
         self.transcript_combo.currentIndexChanged.connect(self.on_transcript_changed)
 
-        # build Samples tab 
+        # build Samples tab
         self.sample_combo = QComboBox()
         self.sample_view = QTreeWidget()
         self.sample_view.setColumnCount(2)
-        self.sample_view.setHeaderLabels(["Field","Value"])
+        self.sample_view.setHeaderLabels(["Field", "Value"])
         tx_layout = QVBoxLayout()
         tx_layout.addWidget(self.sample_combo)
         tx_layout.addWidget(self.sample_view)
         tx_widget = QWidget()
         tx_widget.setLayout(tx_layout)
-        self.view.addTab(tx_widget,"Samples")
+        self.view.addTab(tx_widget, "Samples")
         self.sample_combo.currentIndexChanged.connect(self.on_sample_changed)
 
-
-    
-       # self.view.setColumnCount(2)
+        # self.view.setColumnCount(2)
         # Set title of columns
-       # self.view.setHeaderLabels([self.tr("Attributes"), self.tr("Values")])
+        # self.view.setHeaderLabels([self.tr("Attributes"), self.tr("Values")])
 
         v_layout = QVBoxLayout()
         v_layout.setContentsMargins(0, 0, 0, 0)
@@ -112,8 +107,7 @@ class InfoVariantWidget(PluginWidget):
 
         # self._variant = dict()
 
-        #self.add_tab("variants")
-
+        # self.add_tab("variants")
 
     def on_open_project(self, conn):
         self.conn = conn
@@ -121,11 +115,10 @@ class InfoVariantWidget(PluginWidget):
     def on_variant_changed(self, variant):
         self.current_variant = variant
 
-
     @property
     def conn(self):
         """ Return sqlite connexion of cutevariant project """
-        return self._conn 
+        return self._conn
 
     @conn.setter
     def conn(self, conn):
@@ -153,18 +146,18 @@ class InfoVariantWidget(PluginWidget):
 
     def populate(self):
         """Show the current variant attributes on the TreeWidget"""
-       
+
         if "id" not in self.current_variant:
-            return 
+            return
 
         variant_id = self.current_variant["id"]
 
-        # Populate Variants 
+        # Populate Variants
         self.variant_view.clear()
         for key, value in sql.get_one_variant(self.conn, variant_id).items():
             item = QTreeWidgetItem()
-            item.setText(0,key)
-            item.setText(1,str(value))
+            item.setText(0, key)
+            item.setText(1, str(value))
 
             if key == "classification":
                 self.classification_box.setCurrentIndex(int(value))
@@ -205,7 +198,7 @@ class InfoVariantWidget(PluginWidget):
                 item = QTreeWidgetItem()
                 item.setText(0, key)
                 item.setText(1, str(val))
-                
+
                 self.transcript_view.addTopLevelItem(item)
 
     @Slot()
@@ -222,13 +215,12 @@ class InfoVariantWidget(PluginWidget):
                 item.setText(0, key)
                 item.setText(1, str(value))
                 self.sample_view.addTopLevelItem(item)
-        
 
     @Slot()
     def on_save_clicked(self):
         """Save button 
         """
-        classification = self.classification_box.currentIndex() 
+        classification = self.classification_box.currentIndex()
         favorite = self.favorite_checkbox.isChecked()
         comment = self.comment_input.toPlainText()
 
@@ -236,12 +228,10 @@ class InfoVariantWidget(PluginWidget):
             "id": self.current_variant["id"],
             "classification": classification,
             "favorite": favorite,
-            "comment": comment
-            }
+            "comment": comment,
+        }
 
         sql.update_variant(self.conn, updated)
-
-        
 
     def show_menu(self, pos: QPoint):
         """Show context menu associated to the current variant"""
@@ -251,11 +241,11 @@ class InfoVariantWidget(PluginWidget):
 
 
 if __name__ == "__main__":
-    import sys 
+    import sys
+
     app = QApplication(sys.argv)
 
     conn = get_sql_connexion("/home/schutz/Dev/cutevariant/examples/test.db")
-
 
     w = InfoVariantWidget()
     w.conn = conn
@@ -266,4 +256,4 @@ if __name__ == "__main__":
 
     w.show()
 
-    app.exec_() 
+    app.exec_()

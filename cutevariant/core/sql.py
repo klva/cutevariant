@@ -1,7 +1,13 @@
 """This Modules bringing together all the SQL related functions 
 to read and write the sqlite database with the schema describe here. 
 Each method refer to a CRUD operation using following prefixes:
-``get_``, ``insert_``, ``update_``, ``remove_`` and take a sqlite connexion as ``conn`` attribut.
+
+get_{tablename}: get a record from table  
+get_{tablename}s: get all records from table  
+create_{tablename}: insert a record 
+create_many_{tablename}: insert records 
+edit_{tablename}: edit a record 
+delete_{tablename}: delete a record  
 
 The module contains also QueryBuilder class to build complexe variant query based on 
 filters,columns and selection.
@@ -25,17 +31,22 @@ Example::
 # Standard imports
 import sqlite3
 import sys
+import typing 
 from collections import defaultdict
 from pkg_resources import parse_version
 from functools import lru_cache
 
 # Custom imports
 import cutevariant.commons as cm
-import logging 
+import logging
+
 LOGGER = cm.logger()
 
-
-## ================ Misc functions ====================================
+## ===========================================================
+##
+##      MISC function 
+##
+## ===========================================================
 
 def get_sql_connexion(filepath):
     """Open a SQLite database and return the connexion object
@@ -55,6 +66,7 @@ def get_sql_connexion(filepath):
     assert foreign_keys_status == 1, "Foreign keys can't be activated :("
     return connexion
 
+
 def drop_table(conn, table_name):
     """Drop the given table
     
@@ -66,6 +78,7 @@ def drop_table(conn, table_name):
     cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
     conn.commit()
 
+
 def clear_table(conn: sqlite3.Connection, table_name):
     """Clear content of the given table 
     
@@ -76,6 +89,36 @@ def clear_table(conn: sqlite3.Connection, table_name):
     cursor = conn.cursor()
     cursor.execute(f"DELETE  FROM {table_name}")
     conn.commit()
+
+
+def table_exists(conn: sqlite3.Connection, name: str):
+    """Test if a table exists
+    
+    Args:
+        conn (sqlite3.Connection): sqlite3 connection
+        name (str): table name
+    
+    Returns:
+        bool: Return True if table exists
+    """
+    c = conn.cursor()
+    c.execute(f"SELECT name FROM sqlite_master WHERE name = '{name}'")
+    return c.fetchone() != None
+
+def table_count(conn: sqlite3.Connection, name:str):
+    """Return record count from table name
+    
+    Args:
+        conn (sqlite3.Connection): sqlite3 connection
+        name (str): table name
+    
+    Returns:
+        int: record's count 
+    """
+    c = conn.cursor()
+    c.execute(f"SELECT COUNT(*) as 'count' FROM {name}")
+    return c.fetchone()[0]
+
 
 
 def get_columns(conn: sqlite3.Connection, table_name):
@@ -101,31 +144,123 @@ def get_columns(conn: sqlite3.Connection, table_name):
     ]
 
 
-def create_indexes(conn: sqlite3.Connection):
-    """Create extra indexes on tables
+# CRUD operation 
+
+def _create(conn: sqlite3.Connection, table_name:str, data:dict):
+    """CRUD operation : insert data into table_name
     
     Args:
-        conn (sqlite3.Connection): Sqlite3 Connection
-
-    Note:
-        This function must be called after batch insertions.
-        You should use this function instead of individual functions.
-    
+        conn (sqlite3.Connection): Sqlite3 connection
+        table_name (str): table name
+        data (dict): data input
     """
+    if "id" in data:
+        del data["id"]
 
-    create_variants_indexes(conn)
-    create_selections_indexes(conn)
-
-    try:
-        # Some databases have not annotations table
-        create_annotations_indexes(conn)
-    except sqlite3.OperationalError as e:
-        LOGGER.debug("create_indexes:: sqlite3.%s: %s", e.__class__.__name__, str(e))
+    fields = ",".join([f"`{key}`" for key in data.keys()])
+    values = ",".join([f":{key}" for key in data.keys()])
 
 
-## ================ PROJECT TABLE ===================================
+    cursor = conn.cursor()
+    cursor.execute(
+        f"""INSERT INTO {table_name} ({fields}) VALUES ({values})""", (data)
+    )
+    conn.commit()
+    return cursor.lastrowid
 
-def create_project(conn: sqlite3.Connection, name: str, reference: str):
+def _update(conn: sqlite3.Connection, table_name:str, data:dict, record_id: int):
+    """CRUD operation: Edit data from table_name
+    
+    Args:
+        conn (sqlite3.Connection): Sqlite3 connection
+        table_name (str): table name
+        data (dict): data input
+        record_id (int): record id 
+    """
+    new_data = _get(conn,table_name,record_id)
+    new_data.update(data)
+
+    set_clause = []
+    for key, value in new_data.items():
+        set_clause.append(f"`{key}` = :{key}")
+
+    set_clause = ",".join(set_clause)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        f"UPDATE {table_name} SET {set_clause} WHERE id = :id", new_data
+    )
+    conn.commit()
+    return record_id
+
+def _get(conn, table_name, record_id = 1):
+    """CRUD operation : Get one record from table name 
+    
+    Args:
+        conn (sqlite3.Connection): sqlite3 Connection
+        table_name (str): table name
+        record_id (int): record id
+    
+    Returns:
+        dict: Return record data
+    """
+    conn.row_factory = sqlite3.Row
+    return dict(conn.execute(f"SELECT * FROM {table_name} WHERE rowid = ?",(record_id,)).fetchone())
+
+
+def _get_list(conn: sqlite3.Connection, table_name: str, select = list(), where = dict()):
+    """CRUD operation: Get records list from table_name
+    
+    Args:
+        conn (sqlite3.Connection): Description
+        table_name (str): Description
+        select (list, optional): List of column to select. By default all 
+        where (list, optional): Value to keep
+    
+    Returns:
+        list: List of records 
+    """
+    conn.row_factory = sqlite3.Row
+
+    if not select:
+        select_clause= "*"
+    else:
+        select_clause = ",".join([f"`{field}`" for field in select])
+
+    where_clause = []
+    for key, value in where.items():
+        if type(value) == str:
+            where_clause.append(f"`{key}` == '{value}'")
+        else:
+            where_clause.append(f"`{key}` == `{value}`")
+
+    if where_clause:
+        where_clause = " AND ".join(where_clause)
+        query = f"SELECT {select_clause} FROM {table_name} WHERE {where_clause}"
+    else:
+        query = f"SELECT {select_clause} FROM {table_name}"
+    
+    return (dict(data) for data in conn.execute(query)) 
+
+def _delete(conn: sqlite3.Connection, table_name:str, record_id: int):
+    """CRUD operation: Remove record from table_name
+    
+    Args:
+        conn (sqlite3.Connection): sqlite3 Connection
+        table_name (str): table name
+        record_id (int): record id
+    """
+    conn.execute(f"DELETE FROM {table_name} WHERE id = ?", (record_id,))
+ 
+
+## ===========================================================
+##
+##      PROJECT TABLES 
+##
+## ===========================================================
+
+def create_table_project(conn: sqlite3.Connection, name: str, reference: str):
     """Create the table "projects" and insert project name and reference genome
         
     Args:
@@ -147,9 +282,35 @@ def create_project(conn: sqlite3.Connection, name: str, reference: str):
     conn.commit()
 
 
-## ================ SELECTION TABLE ===================================
+def get_project(conn: sqlite3.Connection):
+    """Return project data 
+    
+    Args:
+        conn (sqlite3.Connection): Description
+    """
 
-def create_table_selections(conn:sqlite3.Connection):
+    return _get(conn, "projects", 1)
+
+
+def update_project(conn: sqlite3.Connection, data: dict):
+    """Update project data
+    
+    Args:
+        conn (sqlite3.Connection): Sqlite3 connection
+        data (dict): data input
+    """
+    _update(conn, "projects", data, 1)
+
+
+
+## ===========================================================
+##
+##      SELECTION TABLES 
+##
+## ===========================================================
+
+
+def create_table_selections(conn: sqlite3.Connection):
     """Create the table "selections" and association table "selection_has_variant"
     
     This table stores variants selection saved by the user:
@@ -209,83 +370,77 @@ def create_selection_has_variant_indexes(conn: sqlite3.Connection):
     Args:
         conn (sqlite3.Connection): Sqlite3 connection
     """
-    # 
+    #
     conn.execute(
         """CREATE INDEX idx_selection_has_variant ON selection_has_variant (selection_id)"""
     )
 
 
-def insert_selection(conn, query: str, name="no_name", count=0):
-    """Insert one selection record
+
+def create_selection_with_variants(conn: sqlite3.Connection, name:str, variant_ids: typing.Iterable):
+    """Create selection {name} with variant_ids 
     
     Args:
-        conn (sqlite3.Connection): Sqlite3 Connection.It can be a cursor or a connection here...
-        query (str): a VQL query
-        name (str, optional): Name of selection
-        count (int, optional): Variant count of selection
-    
-    Returns:
-        int: Return last rowid 
-    
-    See Also:
-        create_selection_from_sql()
-    
-    Warning:
-        This function does a commit !
-    
-    
+        conn (sqlite3.Connection): sqlite3 connection
+        name (str): Name of selection
+        variant_ids (typing.Iterable): Sql id of each variant to select
     """
-    cursor = conn.cursor() if isinstance(conn, sqlite3.Connection) else conn
-
-    cursor.execute(
-        """INSERT INTO selections (name, count, query) VALUES (?,?,?)""",
-        (name, count, query),
-    )
-    if isinstance(conn, sqlite3.Connection):
-        # Commit only if connection is given. => avoid not consistent DB
-        conn.commit()
-    return cursor.lastrowid
-
-def delete_selection_by_name(conn: sqlite3.Connection, name: str):
-    """Delete selection from name 
     
-    Args:
-        conn (sqlit3.Connection): sqlite3 connection
-        name (str): selection name 
-    
-    Returns:
-        TYPE: Description
-    """
+    # Create selection 
+    selection_id = create_selection(conn, "", name, count= 0)
 
-    if name == "variants":
-        LOGGER.error("Cannot remove variants")
-        return 
-        
+    try:
+        conn.execute("""DROP INDEX idx_selection_has_variant""")
+    except sqlite3.OperationalError:
+        pass
+    conn.commit()
     cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM selections WHERE name = ?", (name,))
+    cursor.executemany(f"INSERT INTO selection_has_variant (variant_id, selection_id) VALUES (?,{selection_id})",  ((v,) for v in variant_ids ) )
+    row_count_inserted = cursor.rowcount
+
+    create_selection_has_variant_indexes(cursor)
     conn.commit()
 
-def create_selection_from_sql(
-    conn: sqlite3.Connection, query: str, name: str, count=None, from_selection=False
+    # Update selections with new row count 
+    _update(conn,"selections", {"count":row_count_inserted}, selection_id)
+
+
+
+
+def insert_selection_from_sql(
+    conn: sqlite3.Connection, sql_query: str, name: str, count=None, from_selection=False
 ):
-    """Create a selection record from sql variant query
-        
+    """Create a selection record from sql query on variant table 
+    
     Args:
-        conn (sqlite3.connexion): Sqlite3 connexion
-        query (str): VQL query
+        conn (sqlite3.Connection): Sqlite3 connexion
+        sql_query (str): Select statement on variant table with id 
         name (str): Name of selection
         count (int, optional): Variant count
         from_selection (bool, optional): selection name
+    
+    Note:
+        The variant query must have the id fields 
+    
+    TODO:
+        Rename query > target
+        Query > filters query only ? 
+        Conflict with insert selection ...
+
+    WARNINGS:
+        DEPRECATED 
+
+    
     """
     cursor = conn.cursor()
 
     # Compute query count
     #  TODO : this can take a while .... need to compute only one from elsewhere
     if not count:
-        count = cursor.execute(f"SELECT COUNT(*) FROM ({query})").fetchone()[0]
+        count = cursor.execute(f"SELECT COUNT(*) FROM ({sql_query})").fetchone()[0]
 
     # Create selection
-    selection_id = insert_selection(cursor, query, name=name, count=count)
+    selection_id = create_selection(conn, sql_query, name=name, count=count)
 
     # DROP indexes
     # For joints between selections and variants tables
@@ -304,7 +459,7 @@ def create_selection_from_sql(
         # variant_id is the only useful column here
         q = f"""
         INSERT INTO selection_has_variant
-        SELECT DISTINCT variant_id, {selection_id} FROM ({query})
+        SELECT DISTINCT variant_id, {selection_id} FROM ({sql_query})
         """
     else:
         # Fallback
@@ -312,7 +467,7 @@ def create_selection_from_sql(
         # Default behavior => a variant is based on chr,pos,ref,alt
         q = f"""
         INSERT INTO selection_has_variant
-        SELECT DISTINCT id, {selection_id} FROM ({query})
+        SELECT DISTINCT id, {selection_id} FROM ({sql_query})
         """
 
     cursor.execute(q)
@@ -322,19 +477,19 @@ def create_selection_from_sql(
     create_selection_has_variant_indexes(cursor)
 
     conn.commit()
-    if cursor.rowcount:
-        return cursor.lastrowid
-    return None
+    return cursor.lastrowid
 
 
-def create_selection_from_bed(conn: sqlite3.Connection, source: str, target: str, bed_intervals):
+def create_selection_from_interval(
+    conn: sqlite3.Connection, source: str, target: str, bed_intervals
+):
     """Create a new selection based on the given intervals taken from a BED file
     
     Args:
         conn (sqlite3.connexion): Sqlite3 connexion
         source (str): Selection name (source)
         target (str): Selection name (target)
-        bed_intervals (list): List of interval (begin,end) 
+        bed_intervals (list): List of interval {chrom:chr3, start:34,end:34234,name:unused} 
     
     Returns:
         TYPE: Description
@@ -387,7 +542,75 @@ def create_selection_from_bed(conn: sqlite3.Connection, source: str, target: str
                 variants.pos <= bed_table.end """
     )
 
-    return create_selection_from_sql(conn, query, target, from_selection=True)
+    return insert_selection_from_sql(conn, query, target, from_selection=True)
+
+def create_selection(conn, query: str, name="no_name", count=0):
+    """Insert one selection record. This method doesn't fill selection_has_variant.
+    See insert_selection_from_sql. 
+    
+    Args:
+        conn (sqlite3.Connection): Sqlite3 Connection.It can be a cursor or a connection here...
+        query (str): a VQL query
+        name (str, optional): Name of selection
+        count (int, optional): Variant count of selection
+    
+    Returns:
+        int: Return last rowid 
+    
+    See Also:
+        insert_selection_from_sql()
+    
+    Warning:
+        This function does a commit !
+
+    
+    
+    """    
+    return _create(conn,"selections", {"name": name, "count": count})
+
+
+def delete_selection(conn: sqlite3.Connection, id: int):
+    """Delete selection from record id
+    
+    Args:
+        conn (sqlite3.Connection): Sqlite connection
+        id (int): table id
+    """
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM selections WHERE id = ?", (id,))
+    conn.commit()
+
+
+def delete_selection_by_name(conn: sqlite3.Connection, name: str):
+    """Delete selection from name 
+    
+    Args:
+        conn (sqlit3.Connection): sqlite3 connection
+        name (str): selection name 
+    
+    Returns:
+        TYPE: Description
+    """
+
+    if name == "variants":
+        LOGGER.error("Cannot remove variants")
+        return
+
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM selections WHERE name = ?", (name,))
+    conn.commit()
+
+
+
+def get_selection(conn: sqlite3.Connection, selection_id : int):
+    """Get selection 
+    
+    Args:
+        conn (sqlite3.Connection): Sqlite3 connection
+        selection_id (int): table id 
+    """ 
+    conn.row_factory = sqlite3.Row
+    return dict(conn.execute("SELECT * FROM selections WHERE id = ?",(selection_id,)).fetchone())
 
 
 def get_selections(conn: sqlite3.Connection):
@@ -426,7 +649,7 @@ def delete_selection(conn: sqlite3.Connection, selection_id: int):
     return cursor.rowcount
 
 
-def edit_selection(conn:sqlite3.Connection, selection: dict):
+def update_selection(conn: sqlite3.Connection, record: dict):
     """Update the name and count of a selection with the given id
     
     Args:
@@ -437,57 +660,29 @@ def edit_selection(conn:sqlite3.Connection, selection: dict):
         int: last rowid
     """
     cursor = conn.cursor()
+
+    try: 
+        record_id = record["id"]
+    except:
+        raise IndexError("id key is required in data input")
+
+    new_record = get_selection(conn,record_id)
+    new_record.update(record)
+
+
     conn.execute(
-        "UPDATE selections SET name=:name, count=:count WHERE id = :id", selection
+        "UPDATE selections SET name=:name, count=:count WHERE id = :id", new_record
     )
     conn.commit()
     return cursor.rowcount
 
 
-## ================ Operations on sets of variants =============================
 
-
-def get_query_columns(mode="variant"):
-    """(DEPRECATED FOR NOW, NOT USED)
-    Handy func to get columns to be queried according to the group by argument
-
-    .. note:: Used by intersect_variants, union_variants, subtract_variants
-        in order to avoid code duplication.
-    """
-    if mode == "site":
-        return "chr,pos"
-
-    if mode == "variant":
-        # Not used
-        return "variant_id"
-
-    raise NotImplementedError
-
-
-def intersect_variants(query1, query2, **kwargs):
-    """Get the variants obtained by the intersection of 2 queries
-    Try to handl precedence of operators.
-    - The precedence of UNION and EXCEPT are similar, they are processed from
-    left to right.
-    - Both of the operations are fulfilled before INTERSECT operation,
-    i.e. they have precedence over it.
-
-    """
-    return f"""SELECT * FROM ({query1} INTERSECT {query2})"""
-
-
-def union_variants(query1, query2, **kwargs):
-    """Get the variants obtained by the union of 2 queries"""
-    return f"""{query1} UNION {query2}"""
-
-
-def subtract_variants(query1, query2, **kwargs):
-    """Get the variants obtained by the difference of 2 queries"""
-    return f"""{query1} EXCEPT {query2}"""
-
-
-## ================ Fields functions ===========================================
-
+## ===========================================================
+##
+##      Fields TABLES 
+##
+## ===========================================================
 
 def create_table_fields(conn):
     """Create the table "fields"
@@ -517,7 +712,7 @@ def create_table_fields(conn):
     conn.commit()
 
 
-def insert_field(
+def create_field(
     conn, name="no_name", category="variants", type="text", description=str()
 ):
     """Insert one field record (NOT USED)
@@ -535,15 +730,15 @@ def insert_field(
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT INTO fields VALUES (?, ?, ?, ?)
+        INSERT INTO fields VALUES (?,?, ?, ?, ?)
         """,
-        (name, category, type, description),
+        (None,name, category, type, description),
     )
     conn.commit()
     return cursor.lastrowid
 
 
-def insert_many_fields(conn, data: list):
+def create_many_fields(conn, data: list):
     """Insert multiple fields into "fields" table using one commit
 
     :param conn: sqlite3.connect
@@ -580,6 +775,17 @@ def get_fields(conn):
     conn.row_factory = sqlite3.Row
     return (dict(data) for data in conn.execute("""SELECT * FROM fields"""))
 
+def delete_field(conn: sqlite3.Connection, field_id: int):
+    """Delete field from record id 
+    
+    Args:
+        conn (sqlite3.Connection): sqlite3 connection
+        field_id (int): record id 
+    """
+    conn.execute(f"DELETE FROM fields WHERE id = ?", (field_id,))
+
+
+
 
 def get_field_by_category(conn, category):
     """ Get fields within a category
@@ -593,20 +799,41 @@ def get_field_by_category(conn, category):
     return [field for field in get_fields(conn) if field["category"] == category]
 
 
-def get_field_by_name(conn, field_name: str):
-    """ Return field by his name 
-
+def get_field_by_name(conn: sqlite3.Connection, field_name: str):
+    """Return field by his name 
+    
     .. seealso:: get_fields 
-
+    
     :param conn: sqlite3.connect
     :param field_name (str): field name 
     :return: field record 
     :rtype: <dict>
+    
+    Args:
+        conn (TYPE): Description
+        field_name (str): Description
+    
+    Returns:
+        TYPE: Description
     """
     conn.row_factory = sqlite3.Row
     return dict(
         conn.execute(
             """SELECT * FROM fields WHERE name = ? """, (field_name,)
+        ).fetchone()
+    )
+
+def get_field(conn, field_id : int):
+    """Return filed by his id 
+    
+    Args:
+        conn (sqlite3.connection): sqlite3. connection
+        field_id (int): field table id 
+    """
+    conn.row_factory = sqlite3.Row
+    return dict(
+        conn.execute(
+            """SELECT * FROM fields WHERE id =  ? """, (field_id,)
         ).fetchone()
     )
 
@@ -647,16 +874,21 @@ def get_field_unique_values(conn, field_name: str):
     return [i[field_name] for i in conn.execute(query)]
 
 
-## ================ Annotations functions ======================================
+## ===========================================================
+##
+##      ANNOTATIONS TABLES 
+##
+## ===========================================================
 
 
-def create_table_annotations(conn, fields):
+def create_table_annotations(conn: sqlite3.Connection, fields):
     """Create "annotations" table which contains dynamics fields
 
-    :param fields: Generator of SQL fields.
-        :Example of fields:
+    Args:
+        conn (sqlite3.Connection): sqlite3 connection
+        fields (iterable): Iterable of SQL fields 
+        Example of fields:
             ('allele str NULL', 'consequence str NULL', ...)
-    :type fields: <generator>
     """
     schema = ",".join([f'{field["name"]} {field["type"]}' for field in fields])
 
@@ -690,11 +922,36 @@ def create_annotations_indexes(conn):
         LIMIT 100
     """
 
-    # Allow search on variant_id
-    conn.execute("""CREATE INDEX idx_annotations ON annotations (variant_id)""")
+    try:
+        conn.execute("""CREATE INDEX idx_annotations ON annotations (variant_id)""")
+    except sqlite3.OperationalError as e:
+        logging.warning("No annotation table")
+    
+
+def get_annotations(conn: sqlite3.Connection, annotation_id: int):
+    """Get variant annotation with the given id 
+    
+    Args:
+        conn (sqlite3.Connection): sqlite3 Connection
+        annotation_id (int): record id 
+    
+    Yields:
+        dict: Annotation records as key value
+    
+    """
+    conn.row_factory = sqlite3.Row
+    for annotation in conn.execute(
+        f"""SELECT * FROM annotations WHERE variant_id = {annotation_id}"""
+    ):
+        yield dict(annotation)
 
 
-## ================ Variants functions =========================================
+
+## ===========================================================
+##
+##      VARIANTS TABLES 
+##
+## ===========================================================
 
 
 def create_table_variants(conn, fields):
@@ -768,7 +1025,7 @@ def create_variants_indexes(conn):
     conn.execute("""CREATE INDEX idx_variants_ref_alt ON variants (ref, alt)""")
 
 
-def get_one_variant(conn, id: int):
+def get_variant(conn, id: int):
     """Get the variant with the given id"""
     # Use row_factory here
     conn.row_factory = sqlite3.Row
@@ -777,9 +1034,10 @@ def get_one_variant(conn, id: int):
         conn.execute(f"""SELECT * FROM variants WHERE variants.id = {id}""").fetchone()
     )
 
+
 def update_variant(conn, variant: dict):
     """ Update variant data """
-    
+
     sql_set = []
     sql_val = []
     for key, value in variant.items():
@@ -787,29 +1045,12 @@ def update_variant(conn, variant: dict):
             sql_set.append(f"`{key}` = ? ")
             sql_val.append(value)
 
-    query = "UPDATE variants SET " + ",".join(sql_set) + " WHERE id = " + str(variant["id"])
+    query = (
+        "UPDATE variants SET " + ",".join(sql_set) + " WHERE id = " + str(variant["id"])
+    )
     conn.execute(query, sql_val)
     conn.commit()
 
-def get_annotations(conn, id: int):
-    """ Get variant annotation with the given id """
-    conn.row_factory = sqlite3.Row
-    for annotation in conn.execute(
-        f"""SELECT * FROM annotations WHERE variant_id = {id}"""
-    ):
-        yield dict(annotation)
-
-
-def get_sample_annotations(conn, variant_id: int, sample_id: int):
-    """ Get variant annotation for a given sample """
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    q = f"""SELECT * FROM sample_has_variant WHERE variant_id = {variant_id} and sample_id = {sample_id}"""
-    result = cursor.execute(
-        f"""SELECT * FROM sample_has_variant WHERE variant_id = {variant_id} and sample_id = {sample_id}"""
-    ).fetchone()
-
-    return dict(result)
 
 
 def get_variants_count(conn):
@@ -817,7 +1058,7 @@ def get_variants_count(conn):
     return conn.execute("""SELECT COUNT(*) FROM variants""").fetchone()[0]
 
 
-def async_insert_many_variants(conn, data, total_variant_count=None, yield_every=3000):
+def async_create_many_variants(conn, data, total_variant_count=None, yield_every=3000):
     """Insert many variants from data into variants table
 
     :param conn: sqlite3.connect
@@ -1007,18 +1248,46 @@ def async_insert_many_variants(conn, data, total_variant_count=None, yield_every
     yield 97, f"{variant_count - errors} variant(s) has been inserted."
 
     # Create default selection (we need the number of variants for this)
-    insert_selection(
+    create_selection(
         conn, "", name=cm.DEFAULT_SELECTION_NAME, count=variant_count - errors
     )
 
 
-def insert_many_variants(conn, data, **kwargs):
-    for _, _ in async_insert_many_variants(conn, data, kwargs):
+def create_many_variants(conn, data, **kwargs):
+    for _, _ in async_create_many_variants(conn, data, kwargs):
         pass
 
 
-## ================ Samples functions ==========================================
 
+
+def intersect_variants(query1, query2, **kwargs):
+    """Get the variants obtained by the intersection of 2 queries
+    Try to handl precedence of operators.
+    - The precedence of UNION and EXCEPT are similar, they are processed from
+    left to right.
+    - Both of the operations are fulfilled before INTERSECT operation,
+    i.e. they have precedence over it.
+
+    """
+    return f"""SELECT * FROM ({query1} INTERSECT {query2})"""
+
+
+def union_variants(query1, query2, **kwargs):
+    """Get the variants obtained by the union of 2 queries"""
+    return f"""{query1} UNION {query2}"""
+
+
+def subtract_variants(query1, query2, **kwargs):
+    """Get the variants obtained by the difference of 2 queries"""
+    return f"""{query1} EXCEPT {query2}"""
+
+
+
+## ===========================================================
+##
+##      SAMPLES TABLES 
+##
+## ===========================================================
 
 def create_table_samples(conn, fields=None):
     """Create samples table
@@ -1051,7 +1320,7 @@ def create_table_samples(conn, fields=None):
     )
 
     if not fields:
-        schema = 'gt INTEGER DEFAULT DEFAULT -1'
+        schema = "gt INTEGER DEFAULT DEFAULT -1"
 
     cursor.execute(
         f"""CREATE TABLE sample_has_variant  (
@@ -1069,7 +1338,7 @@ def create_table_samples(conn, fields=None):
     conn.commit()
 
 
-def insert_sample(conn, name="no_name"):
+def create_sample(conn, name="no_name"):
     """Insert one sample in samples table (USED in TESTS)
 
     :param conn: sqlite3.connect
@@ -1082,7 +1351,7 @@ def insert_sample(conn, name="no_name"):
     return cursor.lastrowid
 
 
-def insert_many_samples(conn, samples: list):
+def create_many_samples(conn, samples: list):
     """Insert many samples at a time in samples table
 
     :param samples: List of samples names
@@ -1107,6 +1376,7 @@ def get_samples(conn):
     conn.row_factory = sqlite3.Row
     return (dict(data) for data in conn.execute("""SELECT * FROM samples"""))
 
+
 def update_sample(conn, sample: dict):
     """Update sample record
     
@@ -1127,8 +1397,8 @@ def update_sample(conn, sample: dict):
 
     if "id" not in sample:
         logging.debug("sample id is required")
-        return 
-    
+        return
+
     sql_set = []
     sql_val = []
 
@@ -1137,9 +1407,24 @@ def update_sample(conn, sample: dict):
             sql_set.append(f"`{key}` = ? ")
             sql_val.append(value)
 
-    query = "UPDATE samples SET " + ",".join(sql_set) + " WHERE id = " + str(sample["id"])
+    query = (
+        "UPDATE samples SET " + ",".join(sql_set) + " WHERE id = " + str(sample["id"])
+    )
     conn.execute(query, sql_val)
     conn.commit()
+
+
+def get_sample_annotations(conn, variant_id: int, sample_id: int):
+    """ Get variant annotation for a given sample """
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    q = f"""SELECT * FROM sample_has_variant WHERE variant_id = {variant_id} and sample_id = {sample_id}"""
+    result = cursor.execute(
+        f"""SELECT * FROM sample_has_variant WHERE variant_id = {variant_id} and sample_id = {sample_id}"""
+    ).fetchone()
+
+    return dict(result)
+
 ## ============== VARIANTS QUERY THINGS ... ======================
 
 
@@ -1230,7 +1515,7 @@ class QueryBuilder(object):
             for i in filters:
                 yield from QueryBuilder._filters_to_flat(i)
 
-    def _filters_to_sql(self, node: dict, format_sql = True):
+    def _filters_to_sql(self, node: dict, format_sql=True):
         """Recursive function to convert the filter hierarchical dictionnary into a SQL WHERE clause.
         
         Args:
@@ -1260,13 +1545,13 @@ class QueryBuilder(object):
                 value = f"'{value}'"
 
             if format_sql:
-                # Format for SQL 
+                #  Format for SQL
                 field = self.column_to_sql(field, use_alias=False)
 
             # convert (genotype,sample,field) to genotype(sample).field
-            if isinstance(field,tuple):
-                field = "{}(\"{}\").{}".format(*field)
-        
+            if isinstance(field, tuple):
+                field = '{}("{}").{}'.format(*field)
+
             # TODO ... c'est degeulasse ....
             if operator in ("IN", "NOT IN"):
                 # DO NOT enclose value in quotes
@@ -1322,7 +1607,7 @@ class QueryBuilder(object):
         
             Return:
                 The table name annotations or variants 
-        """ 
+        """
 
         # If column is a function aka tuple : ("genotype", "boby","gt") to "`gt_boby`.gt" to perform SQL JOIN
         if isinstance(column, tuple):
@@ -1333,13 +1618,15 @@ class QueryBuilder(object):
                 else:
                     return f"`gt_{arg}`.`{field_name}`"
 
-
-        if column.startswith("annotations.") or column in self.cache_annotations_columns:
-            column = column.replace("annotations.","")
+        if (
+            column.startswith("annotations.")
+            or column in self.cache_annotations_columns
+        ):
+            column = column.replace("annotations.", "")
             return f"`annotations`.`{column}`"
-        
+
         if column.startswith("variants.") or column in self.cache_variants_columns:
-            column = column.replace("variants.","")
+            column = column.replace("variants.", "")
             return f"`variants`.`{column}`"
 
         return column
@@ -1356,14 +1643,16 @@ class QueryBuilder(object):
         if isinstance(column, tuple):
             return "samples"
 
-        if column.startswith("annotations.") or column in self.cache_annotations_columns:
+        if (
+            column.startswith("annotations.")
+            or column in self.cache_annotations_columns
+        ):
             return "annotations"
 
         if column.startswith("variants.") or column in self.cache_variants_columns:
             return "variants"
 
         return None
-
 
     def headers(self):
         """ Return a clean list of columns 
@@ -1379,17 +1668,17 @@ class QueryBuilder(object):
                 headers.append("{}:{}:{}".format(*column))
             else:
                 headers.append(column)
-        
+
         return headers
 
     def build_sql(
         self,
         columns,
         filters,
-        selection = "variants",
+        selection="variants",
         order_by=None,
         order_desc=True,
-        grouped = False,
+        grouped=False,
         limit=20,
         offset=0,
     ):
@@ -1417,7 +1706,7 @@ class QueryBuilder(object):
         sql_columns = ["`variants`.`id`"] + [self.column_to_sql(col) for col in columns]
         sql_query = f"SELECT {','.join(sql_columns)} "
 
-        # Add child count if grouped 
+        #  Add child count if grouped
         if grouped:
             sql_query += ", COUNT(*) as `children`"
 
@@ -1426,8 +1715,8 @@ class QueryBuilder(object):
 
         #  Add Join Annotations
         columns_in_filters = [i["field"] for i in self._filters_to_flat(filters)]
-        
-        # Loop over columns and check is annotations is required 
+
+        #  Loop over columns and check is annotations is required
         need_join_annotations = False
         for col in columns + columns_in_filters:
             if self.get_table_of_column(col) == "annotations":
@@ -1469,7 +1758,7 @@ class QueryBuilder(object):
 
         #  Add Group By
         if grouped:
-            sql_query += " GROUP BY " + ",".join(["chr","pos","ref","alt"])
+            sql_query += " GROUP BY " + ",".join(["chr", "pos", "ref", "alt"])
 
         #  Add Order By
         if order_by:
@@ -1483,7 +1772,7 @@ class QueryBuilder(object):
 
         return sql_query
 
-    def sql(self, grouped = False, limit = 20, offset = 0):
+    def sql(self, grouped=False, limit=20, offset=0):
         """Return an SQL Query based on internal parameter columns, filter, selection.
         See _build_sql()
 
@@ -1492,7 +1781,16 @@ class QueryBuilder(object):
             offset(int): Page number
 
         """
-        return self.build_sql(self.columns, self.filters,self.selection,self.order_by,self.order_desc,grouped,limit,offset)
+        return self.build_sql(
+            self.columns,
+            self.filters,
+            self.selection,
+            self.order_by,
+            self.order_desc,
+            grouped,
+            limit,
+            offset,
+        )
 
     def vql(self) -> str:
         """Build a VQL query from the current Query
@@ -1514,15 +1812,11 @@ class QueryBuilder(object):
         base = f"SELECT {','.join(_c)} FROM {self.selection}"
         where = ""
         if self.filters:
-            where_clause = self._filters_to_sql(self.filters,format_sql = False)
+            where_clause = self._filters_to_sql(self.filters, format_sql=False)
             if where_clause and where_clause != "()":
                 where = f" WHERE {where_clause}"
-        
 
         return base + where
-
-
-
 
     def items(self, limit=20, offset=0):
         """Execute SQL query and return variants as a list
@@ -1557,7 +1851,7 @@ class QueryBuilder(object):
         for variant in self.conn.execute(sql):
             yield list(dict(variant).values())
 
-    def trees(self, grouped = True, limit=20, offset=0):
+    def trees(self, grouped=True, limit=20, offset=0):
         """ Execute Sql Query and returns variants as Tree
 
         This methods  works only 'group_by' defined and it merge groups results as a tree.
@@ -1589,46 +1883,52 @@ class QueryBuilder(object):
 
         """
         self.conn.row_factory = sqlite3.Row
-    
-        
+
         query = self.build_sql(
-            self.columns, 
-            self.filters, 
+            self.columns,
+            self.filters,
             self.selection,
-            self.order_by, 
+            self.order_by,
             self.order_desc,
-            grouped, # Grouped 
-            limit, offset)
+            grouped,  #  Grouped
+            limit,
+            offset,
+        )
 
         LOGGER.debug(query)
 
         for variant in self.conn.execute(query):
             if grouped:
-            # Return child count, rows with last ( which is children)
+                # Return child count, rows with last ( which is children)
                 yield variant["children"], list(dict(variant).values())[:-1]
             else:
                 yield 0, list(dict(variant).values())
 
-            
             # if grouped:
             #     ann_filter = {"AND": [{"field": "annotations.variant_id", "operator": "=", "value": variant_id}]}
             #     sub_query = self.build_sql(self.columns,ann_filter,self.selection, limit = None)
             #     for sub_item in self.conn.execute(sub_query):
             #         items.append(list(dict(sub_item).values()))
             # else:
-            #items.append(list(dict(variant).values()))    
-            #yield items
-            
+            # items.append(list(dict(variant).values()))
+            # yield items
+
     def children(self, variant_id):
-        """ Return children annotations """ 
+        """ Return children annotations """
 
         self.conn.row_factory = sqlite3.Row
-        ann_filter = {"AND": [{"field": "annotations.variant_id", "operator": "=", "value": variant_id}]}
-        sub_query = self.build_sql(self.columns,ann_filter,self.selection, limit = None)
+        ann_filter = {
+            "AND": [
+                {
+                    "field": "annotations.variant_id",
+                    "operator": "=",
+                    "value": variant_id,
+                }
+            ]
+        }
+        sub_query = self.build_sql(self.columns, ann_filter, self.selection, limit=None)
         for variant in self.conn.execute(sub_query):
             yield list(dict(variant).values())
-        
-            
 
     def count(self):
         """Wrapped function with a memoizing callable that saves up to the
@@ -1641,7 +1941,7 @@ class QueryBuilder(object):
             and it seems difficult to predict which fields will be requested
             by the user.
         """
-        query = self.sql(limit = None)
+        query = self.sql(limit=None)
 
         # Trick to accelerate UI refresh on basic queries
         if self.selection == "variants" and not self.filters:
@@ -1649,9 +1949,9 @@ class QueryBuilder(object):
                 "SELECT MAX(variants.id) as count FROM variants"
             ).fetchone()[0]
 
-        return self.conn.execute(
-            f"SELECT COUNT(*) as count FROM ({query})"
-        ).fetchone()[0]
+        return self.conn.execute(f"SELECT COUNT(*) as count FROM ({query})").fetchone()[
+            0
+        ]
 
     @lru_cache(maxsize=128)
     def cache_count(self):
@@ -1673,18 +1973,16 @@ class QueryBuilder(object):
         """
 
         cursor = self.conn.cursor()
-        count = self.count() # Get count .. Can take a while 
+        count = self.count()  #  Get count .. Can take a while
 
         sql_query = self.build_sql(
-            columns = [],
-            filters = self.filters,
-            selection = self.selection,
-            limit = None)
+            columns=[], filters=self.filters, selection=self.selection, limit=None
+        )
 
         LOGGER.debug(sql_query)
 
         # Create selection
-        selection_id = insert_selection(cursor,sql_query, name=name, count=count)
+        selection_id = create_selection(self.conn, sql_query, name=name, count=count)
 
         # DROP indexes
         # For joints between selections and variants tables
@@ -1698,7 +1996,7 @@ class QueryBuilder(object):
         # (variant_id, selection_id) of "selection_has_variant" table.
         # TODO: is DISTINCT useful here? How a variant could be associated several
         # times with an association?
-  
+
         q = f"""
         INSERT INTO selection_has_variant
         SELECT DISTINCT id, {selection_id} FROM ({sql_query})
@@ -1717,16 +2015,12 @@ class QueryBuilder(object):
             return cursor.lastrowid
         return None
 
-
-    
-        
     def __repr__(self):
         return f"""
         columns : {self.columns}
         filter: {self._filters_to_sql(self.filters)}
         selection: {self.selection}
         """
-
 
 
 class Selection:
@@ -1768,7 +2062,7 @@ class Selection:
 
     def save(self, name):
         """Create the new selection in the database"""
-        return create_selection_from_sql(
+        return insert_selection_from_sql(
             Selection.conn, self.sql_query, name, from_selection=True
         )
 

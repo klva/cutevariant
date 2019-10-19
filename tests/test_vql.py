@@ -5,12 +5,12 @@ from cutevariant.core.vql import execute_vql, VQLSyntaxError
 # Test valid VQL cases
 VQL_TO_TREE_CASES = {
     'SELECT chr,pos,genotype("sacha") FROM variants': {
-        "cmd":"select_cmd",
-        "columns": ["chr", "pos", ('genotype','sacha','gt')],
+        "cmd": "select_cmd",
+        "columns": ["chr", "pos", ("genotype", "sacha", "gt")],
         "source": "variants",
     },
     "SELECT chr,pos,ref FROM variants WHERE a=3 AND b!=5 AND c<3": {
-        "cmd":"select_cmd",
+        "cmd": "select_cmd",
         "columns": ["chr", "pos", "ref"],
         "source": "variants",
         "filter": {
@@ -22,7 +22,7 @@ VQL_TO_TREE_CASES = {
         },
     },
     "SELECT chr,pos,ref FROM variants WHERE a=3 AND (b=5 OR c=3)": {
-        "cmd":"select_cmd",
+        "cmd": "select_cmd",
         "columns": ["chr", "pos", "ref"],
         "source": "variants",
         "filter": {
@@ -38,37 +38,37 @@ VQL_TO_TREE_CASES = {
         },
     },
     'SELECT chr,pos, genotype("sacha") FROM variants # comments are handled': {
-        "cmd":"select_cmd",
-        "columns": ["chr", "pos", ('genotype','sacha','gt')],
-        "source": "variants"
-        },
+        "cmd": "select_cmd",
+        "columns": ["chr", "pos", ("genotype", "sacha", "gt")],
+        "source": "variants",
+    },
     "SELECT chr FROM variants WHERE some_field IN ('one', 'two')": {
-        "cmd":"select_cmd",
+        "cmd": "select_cmd",
         "columns": ["chr"],
         "source": "variants",
-        "filter": {'AND': [{'field': 'some_field', 'operator': 'IN', 'value': ('one', 'two')}]},
+        "filter": {
+            "AND": [{"field": "some_field", "operator": "IN", "value": ("one", "two")}]
+        },
     },
-
     "CREATE denovo FROM variants": {
-        "cmd":"create_cmd",
+        "cmd": "create_cmd",
         "source": "variants",
         "filter": None,
-        "target": "denovo"
+        "target": "denovo",
     },
-
     "CREATE denovo FROM variants WHERE some_field IN ('one', 'two')": {
-        "cmd":"create_cmd",
+        "cmd": "create_cmd",
         "source": "variants",
-        "target":"denovo",
-        "filter": {'AND': [{'field': 'some_field', 'operator': 'IN', 'value': ('one', 'two')}]},
+        "target": "denovo",
+        "filter": {
+            "AND": [{"field": "some_field", "operator": "IN", "value": ("one", "two")}]
+        },
     },
-
-#    "CREATE denovo = boby & alex": {
-#         "cmd":"create_cmd",
-#         "target": "denovo",
-#         "expression":"todo"
-#         },
-
+    #    "CREATE denovo = boby & alex": {
+    #         "cmd":"create_cmd",
+    #         "target": "denovo",
+    #         "expression":"todo"
+    #         },
 }
 
 
@@ -99,4 +99,3 @@ def test_vql_function():
 
     exp = found["expression"]
     a = 3
-

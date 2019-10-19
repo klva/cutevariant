@@ -1,4 +1,3 @@
-
 import re
 
 
@@ -8,7 +7,6 @@ from cutevariant.gui import formatter
 from PySide2.QtWidgets import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-
 
 
 class QueryDelegate(QStyledItemDelegate):
@@ -45,10 +43,10 @@ class QueryDelegate(QStyledItemDelegate):
 
         palette = qApp.palette("QTreeView")
         #  get column name of the index
-        #colname = index.model().headerData(index.column(), Qt.Horizontal)
+        # colname = index.model().headerData(index.column(), Qt.Horizontal)
 
         #  get value of the index
-        #value = index.data(Qt.DisplayRole)
+        # value = index.data(Qt.DisplayRole)
 
         # get select sate
         select = option.state & QStyle.State_Selected
@@ -65,7 +63,6 @@ class QueryDelegate(QStyledItemDelegate):
         painter.drawRect(option.rect)
         painter.restore()
 
-       
         painter.save()
         alignement = Qt.AlignLeft | Qt.AlignVCenter
 
@@ -82,21 +79,18 @@ class QueryDelegate(QStyledItemDelegate):
 
         if font:
             painter.setFont(QFont())
-        
+
         if fg_color:
             painter.setPen(QPen(fg_color))
 
         if decoration:
-            rect = QRect(0,0,25,25)
+            rect = QRect(0, 0, 25, 25)
             rect.moveCenter(option.rect.center())
-            painter.drawPixmap(rect,decoration.pixmap(25,25))
+            painter.drawPixmap(rect, decoration.pixmap(25, 25))
         else:
             painter.drawText(option.rect, alignement, str(index.data()))
-        
-        
+
         painter.restore()
-
-
 
         # # Add margin for first columns if index is first level
         # if index.column() == 0 and index.parent() == QModelIndex():
@@ -177,8 +171,6 @@ class QueryDelegate(QStyledItemDelegate):
         # )
         # painter.drawText(option.rect, alignement, str(index.data()))
 
-
-
     def sizeHint(self, option, index):
         """Override: Return row height"""
         return QSize(0, 30)
@@ -211,16 +203,15 @@ class QueryTreeView(QTreeView):
 
         super().drawBranches(painter, rect, index)
 
+
 class QueryViewWidget(plugin.PluginWidget):
     """Contains the view of query with several controller"""
 
     variant_clicked = Signal(dict)
     LOCATION = plugin.CENTRAL_LOCATION
 
-
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-
 
         self.delegate = QueryDelegate()
         self.setWindowTitle(self.tr("Variants"))
@@ -265,7 +256,6 @@ class QueryViewWidget(plugin.PluginWidget):
         self.save_action.setToolTip("Save current selections")
         self.save_action.triggered.connect(self.on_save_clicked)
 
-
         # Add spacer to push next buttons to the right
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -292,11 +282,10 @@ class QueryViewWidget(plugin.PluginWidget):
             FIcon(0xF865), self.tr("See SQL query"), self.show_sql
         )
 
-
         self.formatter_combo = QComboBox()
 
         for Object in formatter.find_formatters():
-            self.formatters.append(Object()) 
+            self.formatters.append(Object())
             self.formatter_combo.addItem(str(Object.__module__))
 
         self.formatter_combo.activated.connect(self.on_formatter_changed)
@@ -306,16 +295,13 @@ class QueryViewWidget(plugin.PluginWidget):
         self.show_sql_action.setEnabled(False)
         self.bottombar.addWidget(self.page_info)
         self.bottombar.addWidget(spacer)
-      
+
         self.bottombar.setIconSize(QSize(16, 16))
         self.bottombar.setMaximumHeight(30)
 
         self.bottombar.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(main_layout)
-
-
-
 
     def setup_ui(self):
         self.bottombar.addAction(FIcon(0xF792), "<<", self.model.firstPage)
@@ -326,7 +312,6 @@ class QueryViewWidget(plugin.PluginWidget):
         self.page_box.returnPressed.connect(self._update_page)
         self.model.modelReset.connect(self.updateInfo)
         self.view.selectionModel().currentRowChanged.connect(self._variant_clicked)
-
 
     def on_register(self, mainwindow):
         """ Override from PluginWidget """
@@ -343,8 +328,6 @@ class QueryViewWidget(plugin.PluginWidget):
     def on_open_project(self, conn):
         """ Override from PluginWidget """
         pass
-
-
 
     def updateInfo(self):
         """Update metrics for the current query
@@ -378,13 +361,13 @@ class QueryViewWidget(plugin.PluginWidget):
         """
 
         if not index.isValid():
-            return 
+            return
         # Get the rowid of the element at the given index
         rowid = self.model.variant(index)[0]
         # Get data from database
         variant = sql.get_one_variant(self.model.conn, rowid)
         # Emit variant through variant_clicked signal
-        
+
         if self.mainwindow:
             self.mainwindow.on_variant_changed(variant)
 
@@ -445,13 +428,11 @@ class QueryViewWidget(plugin.PluginWidget):
         box.setDetailedText(text)
         box.exec_()
 
-
-
     def contextMenuEvent(self, event: QContextMenuEvent):
         """Overrided method: Show custom context menu associated to the current variant"""
         menu = QMenu(self)
 
-        # Get variant data 
+        #  Get variant data
         index = self.view.indexAt(self.view.viewport().mapFromGlobal(event.globalPos()))
 
         if not index:
@@ -460,50 +441,55 @@ class QueryViewWidget(plugin.PluginWidget):
         variant_id = self.model.variant(index)[0]
         variant = sql.get_one_variant(self.model.conn, variant_id)
 
-
         if "favorite" in variant:
             if not variant["favorite"]:
                 msg = "Mark variant"
-                icon = FIcon(0xf4d2)
+                icon = FIcon(0xF4D2)
             else:
                 msg = "Unmark variant"
-                icon = FIcon(0xf4ce)
-            menu.addAction(icon, msg, lambda : self.model.set_favorite(index,not variant["favorite"]))
+                icon = FIcon(0xF4CE)
+            menu.addAction(
+                icon,
+                msg,
+                lambda: self.model.set_favorite(index, not variant["favorite"]),
+            )
 
         menu.addSeparator()
-        # Create copy action 
+        #  Create copy action
         cell_value = self.model.variant(index)[index.column()]
-        menu.addAction(FIcon(0xf18f),
-        f"Copy {cell_value}", 
-        lambda : qApp.clipboard().setText(str(self.model.variant(index)))
+        menu.addAction(
+            FIcon(0xF18F),
+            f"Copy {cell_value}",
+            lambda: qApp.clipboard().setText(str(self.model.variant(index))),
         )
 
         genomic_location = "{chr}:{pos}{ref}>{alt}".format(**variant)
-        menu.addAction(FIcon(0xf18f),
-        f"Copy {genomic_location}", 
-        lambda : qApp.clipboard().setText(genomic_location)
+        menu.addAction(
+            FIcon(0xF18F),
+            f"Copy {genomic_location}",
+            lambda: qApp.clipboard().setText(genomic_location),
         )
-
 
         menu.addSeparator()
 
         from functools import partial
 
-        # Create open with action 
+        #  Create open with action
         open_with_action = QMenu(self.tr("Open with"))
         settings = QSettings()
         settings.beginGroup("plugins/query_view/links")
         urls = {}
         for key in settings.childKeys():
             url = QUrl(settings.value(key).format(**variant))
-            open_with_action.addAction(FIcon(0xf339), key,  lambda url=url : QDesktopServices.openUrl(url))
+            open_with_action.addAction(
+                FIcon(0xF339), key, lambda url=url: QDesktopServices.openUrl(url)
+            )
 
         settings.endGroup()
 
         menu.addMenu(open_with_action)
 
         menu.exec_(event.globalPos())
-
 
     def _update_page(self):
         """Set page from page_box edit. When user set a page manually, this method is called"""
@@ -519,12 +505,9 @@ class QueryViewWidget(plugin.PluginWidget):
             self.model.changed.emit()
 
 
-
-
-
 if __name__ == "__main__":
     import sys
-    from PySide2.QtWidgets import QApplication 
+    from PySide2.QtWidgets import QApplication
 
     def test():
         print("salut")
@@ -533,6 +516,5 @@ if __name__ == "__main__":
 
     w = QueryViewWidget()
     w.show()
-    
 
     app.exec_()

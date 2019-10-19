@@ -40,11 +40,10 @@ class FIconEngine(QIconEngine):
         """override"""
         font = FIconEngine.font if hasattr(FIconEngine, "font") else painter.font()
 
-        # The following test is to avoid crash when running python widget outside the __main__.my
+        #  The following test is to avoid crash when running python widget outside the __main__.my
         if not font:
             font = painter.font()
             return
-             
 
         painter.save()
 
@@ -54,11 +53,10 @@ class FIconEngine(QIconEngine):
         else:
             painter.setPen(QPen(self.color))
 
-
         font.setPixelSize(rect.size().width())
 
         painter.setFont(font)
-        #painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        # painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
         painter.drawText(
             rect, Qt.AlignCenter | Qt.AlignVCenter, str(chr(self.hex_character))
         )
@@ -94,9 +92,9 @@ class FIcon(QIcon):
         """Build an icon with the given character and color from the current font"""
         self.engine = FIconEngine()
 
-        if self.engine.font is None: # Return empty QIcon
+        if self.engine.font is None:  #  Return empty QIcon
             super().__init__()
-        else:    
+        else:
             self.engine.setCharacter(hex_character)
             if color:
                 self.engine.setColor(color)

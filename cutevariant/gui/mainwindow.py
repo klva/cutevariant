@@ -16,14 +16,17 @@ from cutevariant.gui.ficon import FIcon
 from cutevariant.gui.querymodel import QueryModel
 from cutevariant.gui.wizards import ProjectWizard
 from cutevariant.gui.settings import SettingsWidget
+
 # from cutevariant.gui.querywidget import QueryWidget
 # from cutevariant.gui import plugin
 
 #  Import plugins
 from cutevariant.gui import plugin
-#from cutevariant.gui.plugins.editor.plugin import EditorPlugin
+
+# from cutevariant.gui.plugins.editor.plugin import EditorPlugin
 
 from cutevariant.gui.aboutcutevariant import AboutCutevariant
+
 # from cutevariant.gui.chartquerywidget import ChartQueryWidget
 from cutevariant import commons as cm
 from cutevariant.commons import MAX_RECENT_PROJECTS, DIR_ICONS
@@ -53,55 +56,42 @@ class MainWindow(QMainWindow):
         # store dock plugins
         self.plugins = {}
 
-        # The query model 
+        #  The query model
         self.query_model = QueryModel()
-
 
         self.central_tab = QTabWidget()
         self.footer_tab = QTabWidget()
 
         vsplit = QSplitter(Qt.Vertical)
-        vsplit.addWidget(self.central_tab)  
-        vsplit.addWidget(self.footer_tab)  
+        vsplit.addWidget(self.central_tab)
+        vsplit.addWidget(self.footer_tab)
         self.setCentralWidget(vsplit)
-
-
 
         # Status Bar
         self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)  
+        self.setStatusBar(self.status_bar)
 
-    
         # Setup UI
         self.setup_ui()
 
-      # Register plugins 
+        # Register plugins
         self.register_plugins()
-
-
-
 
         # Window geometry
         self.resize(600, 400)
         self.setGeometry(qApp.desktop().rect().adjusted(100, 100, -100, -100))
 
-
         # Restores the state of this mainwindow's toolbars and dockwidgets
         self.read_settings()
 
-    #     #self.open("test.db")
+        #     #self.open("test.db")
 
         self.query_model.changed.connect(self.on_query_model_changed)
-    
-
-
 
     def setup_ui(self):
         # Setup menubar
         self.setup_menubar()
         self.setup_toolbar()
-
-
 
     def add_panel(self, widget, area=Qt.LeftDockWidgetArea):
         """Add given widget to a new QDockWidget and to view menu in menubar"""
@@ -136,7 +126,6 @@ class MainWindow(QMainWindow):
                 widget.setToolTip(extension.get("description"))
                 widget.on_register(self)
 
-
                 if plugin_widget_class.LOCATION == plugin.DOCK_LOCATION:
                     self.add_panel(widget)
 
@@ -145,8 +134,6 @@ class MainWindow(QMainWindow):
 
                 if plugin_widget_class.LOCATION == plugin.FOOTER_LOCATION:
                     self.footer_tab.addTab(widget, widget.windowTitle())
-
-   
 
     def setup_menubar(self):
         """Menu bar setup: items and actions"""
@@ -165,7 +152,7 @@ class MainWindow(QMainWindow):
         self.recent_files_menu = self.file_menu.addMenu(self.tr("Open recent"))
 
         self.setup_recent_menu()
-       
+
         self.recent_files_menu.addSeparator()
         self.recent_files_menu.addAction(self.tr("Clear"), self.clear_recent_projects)
 
@@ -195,7 +182,7 @@ class MainWindow(QMainWindow):
         # console_action.setCheckable(True)
         # console_action.setShortcuts([Qt.CTRL + Qt.Key_T])
         # console_action.toggled.connect(self.editor.setVisible)
-        
+
         self.view_menu.addSeparator()
 
         ## Help
@@ -212,7 +199,7 @@ class MainWindow(QMainWindow):
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.toolbar.addAction(self.new_project_action)
         self.toolbar.addAction(self.open_project_action)
-        #self.toolbar.addAction(FIcon(0xF40A),"Run", self.execute_vql).setShortcuts([Qt.CTRL + Qt.Key_R, QKeySequence.Refresh])
+        # self.toolbar.addAction(FIcon(0xF40A),"Run", self.execute_vql).setShortcuts([Qt.CTRL + Qt.Key_R, QKeySequence.Refresh])
         self.toolbar.addSeparator()
 
     # def add_tab_view(self, widget):
@@ -257,8 +244,8 @@ class MainWindow(QMainWindow):
         # Create connection
         self.conn = get_sql_connexion(filepath)
 
-        # Create central view 
-        # TODO: rename the class 
+        # Create central view
+        # TODO: rename the class
         self.query_model.conn = self.conn
         self.query_model.load()
 
@@ -285,7 +272,7 @@ class MainWindow(QMainWindow):
         Returns:
             list: Return list of recent project path
         """
-    
+
         # Reload last projects opened
         app_settings = QSettings()
         recent_projects = app_settings.value("recent_projects", list())
@@ -306,13 +293,12 @@ class MainWindow(QMainWindow):
         """ Setup recent menu """
         self.recent_files_menu.clear()
         for path in self.get_recent_projects():
-            self.recent_files_menu.addAction(path,self.on_recent_project_clicked)
+            self.recent_files_menu.addAction(path, self.on_recent_project_clicked)
 
     def on_recent_project_clicked(self):
         """Slot to load a recent project"""
         action = self.sender()
         self.open(action.text())
-
 
     # def handle_plugin_message(self, message):
     #     """Slot to display message from plugin in the status bar"""
@@ -352,7 +338,6 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.status_bar.showMessage(e.__class__.__name__ + ": " + str(e))
                 raise
-    
 
     def show_settings(self):
         """Slot to show settings window"""
@@ -409,8 +394,6 @@ class MainWindow(QMainWindow):
             #  TODO: handle UI changes by passing UI_VERSION to saveState()
             app_settings.setValue("windowState", self.saveState())
 
-
-
     def read_settings(self):
         """Restore the state of this mainwindow's toolbars and dockwidgets
 
@@ -440,7 +423,7 @@ class MainWindow(QMainWindow):
     def on_variant_changed(self, variant):
         for name, _plugin in self.plugins.items():
             if _plugin.isVisible():
-                _plugin.on_variant_changed(variant) 
+                _plugin.on_variant_changed(variant)
 
 
 if __name__ == "__main__":

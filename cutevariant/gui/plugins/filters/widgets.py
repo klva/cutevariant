@@ -537,8 +537,6 @@ class FilterModel(QAbstractItemModel):
         if role == FilterModel.UniqueIdRole:
             return self.item(index).uuid
 
-
-
     def setData(self, index, value, role=Qt.EditRole):
         """Overrided Qt methods: Set data according index and value. 
         This methods is called from FilterDelegate when edition has been done
@@ -713,7 +711,7 @@ class FilterModel(QAbstractItemModel):
         self.endRemoveRows()
         self.filtersChanged.emit()
 
-    def rowCount(self, parent = QModelIndex()) -> int:
+    def rowCount(self, parent=QModelIndex()) -> int:
         """ Overrided Qt methods: return row count according parent """
 
         if not parent.isValid():
@@ -724,7 +722,7 @@ class FilterModel(QAbstractItemModel):
 
         return len(parent_item.children)
 
-    def columnCount(self, parent = QModelIndex()) -> int:
+    def columnCount(self, parent=QModelIndex()) -> int:
         """ Overrided Qt methods: return column count according parent """
 
         return 3
@@ -1004,9 +1002,9 @@ class FiltersWidget(plugin.PluginWidget):
         self.view.setAcceptDrops(True)
         self.view.setDragDropMode(QAbstractItemView.InternalMove)
         self.view.setAlternatingRowColors(True)
-        self.view.header().setSectionResizeMode(0,QHeaderView.Stretch)
-        self.view.header().setSectionResizeMode(1,QHeaderView.ResizeToContents)
-        self.view.header().setSectionResizeMode(2,QHeaderView.Interactive)
+        self.view.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.view.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.view.header().setSectionResizeMode(2, QHeaderView.Interactive)
 
         layout = QVBoxLayout()
         layout.addWidget(self.view)
@@ -1036,7 +1034,7 @@ class FiltersWidget(plugin.PluginWidget):
 
         self.toolbar.addAction(FIcon(0xF5E8), "delete", self.on_delete_item)
 
-        #self.view.selectionModel().currentChanged.connect(self.on_filters_changed)
+        # self.view.selectionModel().currentChanged.connect(self.on_filters_changed)
         self.model.filtersChanged.connect(self.on_filters_changed)
 
     @property
@@ -1056,11 +1054,9 @@ class FiltersWidget(plugin.PluginWidget):
         self.model.filters = filters
         self.view.expandAll()
 
-
     def on_register(self, mainwindow):
         """ Overrided from PluginWidget """
         pass
-
 
     def on_open_project(self, conn):
         """ Overrided from PluginWidget """
@@ -1071,10 +1067,10 @@ class FiltersWidget(plugin.PluginWidget):
         self.filters = model.filters
 
     def on_filters_changed(self):
-        """ triggered when filter has changed """ 
-        self.mainwindow.query_model.filters = self.filters 
+        """ triggered when filter has changed """
+        self.mainwindow.query_model.filters = self.filters
         self.mainwindow.query_model.load(reset_page=True)
-    
+
     def on_add_logic(self):
         """Add logic item to the current selected index
         """
@@ -1137,17 +1133,12 @@ if __name__ == "__main__":
 
     conn = get_sql_connexion("examples/test.db")
 
-    data = {
-        "AND": [
-            {"field": "chr", "operator": "=", "value": "chr"}
-        ]
-    }
+    data = {"AND": [{"field": "chr", "operator": "=", "value": "chr"}]}
 
     view = FilterWidget()
     view.model.load(data)
 
     print(view.model.to_dict() == data)
-
 
     view.show()
 

@@ -27,7 +27,7 @@ from PySide2.QtWidgets import (
     QLineEdit,
     QFrame,
     QStyle,
-    QInputDialog
+    QInputDialog,
 )
 from PySide2.QtCore import (
     QAbstractItemModel,
@@ -36,7 +36,7 @@ from PySide2.QtCore import (
     Slot,
     QModelIndex,
     QSize,
-    Qt
+    Qt,
 )
 from PySide2.QtGui import (
     QPainter,
@@ -301,7 +301,6 @@ class QueryModel(QAbstractItemModel):
                     #  Display children data
                     return str(self.variant(index)[index.column()])
 
-
         # ------ Other Role -----
 
         if self.formatter:
@@ -309,10 +308,8 @@ class QueryModel(QAbstractItemModel):
                 column_name = self.builder.headers()[index.column()]
                 value = self.data(index, Qt.DisplayRole)
                 return self.formatter.item_data(column_name, value, role)
-            
-        
-        return None
 
+        return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Overrided: Return column name 
@@ -375,8 +372,7 @@ class QueryModel(QAbstractItemModel):
         self.variants[parent.row()].extend(children)
         self.endInsertRows()
 
-
-    def load(self, emit_changed = True, reset_page=False):
+    def load(self, emit_changed=True, reset_page=False):
         """Load variant data into the model from query attributes
 
         Args:
@@ -421,7 +417,7 @@ class QueryModel(QAbstractItemModel):
         """ set the page of the model """
         if self.hasPage(page):
             self.page = page
-            self.load(emit_changed = False)
+            self.load(emit_changed=False)
 
     def nextPage(self):
         """ Set model to the next page """
@@ -453,7 +449,7 @@ class QueryModel(QAbstractItemModel):
 
             self.builder.order_by = colname
             self.builder.order_desc = order == Qt.DescendingOrder
-            self.load(emit_changed = False)
+            self.load(emit_changed=False)
 
     def displayed(self):
         """Get ids of first, last displayed variants on the total number
@@ -498,18 +494,17 @@ class QueryModel(QAbstractItemModel):
         self.grouped = is_grouped
         self.load()
 
-    def set_favorite(self, index: QModelIndex, favorite : bool):
-        """ Mark/Unmark variant as favorite according value""" 
+    def set_favorite(self, index: QModelIndex, favorite: bool):
+        """ Mark/Unmark variant as favorite according value"""
         variant_id = self.variant(index)[0]
         variant = sql.get_one_variant(self.conn, variant_id)
         if "favorite" in variant:
-            sql.update_variant(self.conn, {"id": variant_id,"favorite": favorite})
+            sql.update_variant(self.conn, {"id": variant_id, "favorite": favorite})
 
         if "favorite" in self.builder.headers():
             fav_col = self.builder.headers().index("favorite")
-            for i , _ in enumerate(self.variants[index.row()]):
+            for i, _ in enumerate(self.variants[index.row()]):
                 self.variants[index.row()][i][fav_col] = int(favorite)
-
 
 
 class QueryDelegate(QStyledItemDelegate):
@@ -685,4 +680,3 @@ class QueryTreeView(QTreeView):
         painter.restore()
 
         super().drawBranches(painter, rect, index)
-

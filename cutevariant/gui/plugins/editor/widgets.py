@@ -156,7 +156,6 @@ class EditorWidget(plugin.PluginWidget):
     executed = Signal()
     LOCATION = plugin.FOOTER_LOCATION
 
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Vql Editor"))
@@ -189,31 +188,26 @@ class EditorWidget(plugin.PluginWidget):
 
         self.executed.connect(self.on_vql_executed)
 
-
     def on_register(self, mainwindow):
         """ Overried from Plugin Widget """
 
-        mainwindow.toolbar.addAction(FIcon(0xF40A),"Run", self.run_vql).setShortcuts([Qt.CTRL + Qt.Key_R, QKeySequence.Refresh])
-
-
+        mainwindow.toolbar.addAction(FIcon(0xF40A), "Run", self.run_vql).setShortcuts(
+            [Qt.CTRL + Qt.Key_R, QKeySequence.Refresh]
+        )
 
     def on_open_project(self, conn):
         """ overrided from PluginWidget """
         self.conn = conn
         self.text_edit.setCompleter(self.create_completer())
 
-
     def on_query_model_changed(self, model):
-        """ Overrided from PluginWidget """ 
+        """ Overrided from PluginWidget """
         self.set_vql(model.builder.vql())
-
 
     def set_vql(self, txt: str):
         self.text_edit.blockSignals(True)
         self.text_edit.setPlainText(txt)
         self.text_edit.blockSignals(False)
-
-    
 
     def create_completer(self):
         """Create Completer with his model"""
@@ -290,7 +284,7 @@ class EditorWidget(plugin.PluginWidget):
         )
 
     def on_vql_executed(self):
-        """ Triggered when a VQL is executed """ 
+        """ Triggered when a VQL is executed """
         if self.mainwindow:
             self.mainwindow.query_model.columns = self.columns
             self.mainwindow.query_model.filters = self.filters
@@ -441,7 +435,8 @@ class VqlEdit(QTextEdit):
 
 if __name__ == "__main__":
 
-    import sys 
+    import sys
+
     app = QApplication(sys.argv)
 
     conn = sqlite3.connect("examples/test.db")
