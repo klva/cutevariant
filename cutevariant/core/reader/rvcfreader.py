@@ -84,6 +84,14 @@ class RvcfReader(AbstractReader):
                 "type": field_type,
             }
 
+        # This is an additionnal field we generate containing the original value of gt
+        yield {
+            "name": "raw_gt",
+            "category": "samples",
+            "description": "genotype as it appeared in the VCF file",
+            "type": "str"
+        }
+
     def convert_gt(self, gt):
         if "/" in gt:
             gt1, gt2 = gt.split("/")
@@ -160,6 +168,7 @@ class RvcfReader(AbstractReader):
                     continue
                 sample_name = field.rsplit(".", maxsplit=1)[0]
                 if name == "gt":
+                    samples_dict[sample_name]["raw_gt"] = value
                     value = self.convert_gt(value)
                 elif field_type == "int":
                     # TODO handle this better
