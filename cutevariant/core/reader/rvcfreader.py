@@ -25,23 +25,6 @@ class RvcfReader(AbstractReader):
 
         # These columns are processed manually
         self.ignored_columns = ("CHROM", "POS", "REF", "ALT")
-        # These columns need to go in the "annotations" category
-        # (per-transcript)
-        # TODO This is AURAGEN-specific, find a way to make this work
-        self.force_annotation_columns = (
-            "Clinvar_Patho",
-            "consequence_action",
-            "VAF",
-            "variant_tag",
-            "transcript_tag",
-            "transcript_tag_variant_impacts",
-            "phenotype_tag",
-            "gene_in_expert_panel",
-            "gene_in_hpo_panel",
-            "hpo_panel_terms",
-            "hpo_panel_distances",
-            "hpo_panel_given_terms",
-        )
         # Stores normalized field data
         self.field_info_cache = {}
 
@@ -131,8 +114,8 @@ class RvcfReader(AbstractReader):
         if field.startswith("INFO.CSQ"):
             name = field.split(".", maxsplit=2)[2]
             category = "annotations"
-        elif field in self.force_annotation_columns:
-            name = field
+        elif field.startswith("INFO.AURAGEN"):
+            name = field.split(".", maxsplit=2)[2]
             category = "annotations"
         elif field.startswith("INFO."):
             name = field.split(".", maxsplit=1)[1]
