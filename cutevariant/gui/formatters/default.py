@@ -66,7 +66,7 @@ class DefaultFormatter(Formatter):
             if value == 5:
                 return QIcon(FIcon(0xf3b0,style.DARK_COLOR["red"]))    
 
-        if re.match(r"genotype(.+).gt", column):
+        if re.match(r"genotype(.+):gt", column):
             value = int(value)
             if value == 0:
                 return QIcon(FIcon(0xF130))
