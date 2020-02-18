@@ -144,6 +144,11 @@ class RvcfReader(AbstractReader):
         if name == "id":
             name = "id2"
 
+        # Rename the "feature" column to transcript beacause CuteVariant
+        # expects this column to exist in some places
+        if name == "feature":
+            name = "transcript"
+
         self.field_info_cache[field] = (name.lower(), category, field_type)
         return (name.lower(), category, field_type)
 
