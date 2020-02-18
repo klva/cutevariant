@@ -107,7 +107,6 @@ class QueryModel(QAbstractItemModel):
 
     def __init__(self, conn=None, parent=None):
         super().__init__()
-        self.conn = conn
         self.limit = 50
         self.page = 0
         self.total = 0
@@ -115,6 +114,10 @@ class QueryModel(QAbstractItemModel):
         self.variants = []
         self.builder = None
         self.formatter = None
+
+        # Keep after all initialization 
+        self.conn = conn
+
 
     @property
     def conn(self):
@@ -288,7 +291,7 @@ class QueryModel(QAbstractItemModel):
             # Return data for the first level
             if self.level(index) == 1:
                 if index.column() == 0:
-                    return self.variants_children_count[index.row()]
+                    return str(self.variants_children_count[index.row()])
                 else:
                     return str(self.variant(index)[index.column()])
 
@@ -392,7 +395,7 @@ class QueryModel(QAbstractItemModel):
 
         self.beginResetModel()
         # Set total of variants for pagination
-        self.total = self.builder.count()
+        self.total = self.builder.count(self.grouped)
 
         if reset_page:
             self.page = 0
@@ -408,7 +411,6 @@ class QueryModel(QAbstractItemModel):
             self.variants.append([variant[1]])
         self.endResetModel()
 
-        LOGGER.debug(self.builder.sql())
 
         if emit_changed:
             self.changed.emit()
@@ -496,6 +498,7 @@ class QueryModel(QAbstractItemModel):
             is_grouped (bool)
         """
         self.grouped = is_grouped
+        self.page = 0
         self.load()
 
     def set_favorite(self, index: QModelIndex, favorite : bool):

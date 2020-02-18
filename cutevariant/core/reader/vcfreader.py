@@ -6,6 +6,22 @@ from .abstractreader import AbstractReader
 from .annotationparser import VepParser, SnpEffParser
 from cutevariant.commons import logger
 
+
+# Fixing PyVCF bug 
+# https://github.com/jamescasbon/PyVCF/pull/320
+def _map(self, func, iterable, bad=['.', '', 'NA']):
+    '''``map``, but make bad values None.'''
+    return [func(x) if x not in bad else None
+            for x in iterable]
+
+vcf.Reader._map = _map
+
+# End fixing 
+
+
+
+
+
 LOGGER = logger()
 
 VCF_TYPE_MAPPING = {"Float": "float", "Integer": "int", "Flag": "bool", "String": "str","Character":"str"}
@@ -100,6 +116,7 @@ class VcfReader(AbstractReader):
         # loop over record
         self.device.seek(0)
         vcf_reader = vcf.VCFReader(self.device)
+        import sys
 
         # TODO : ugly for testing progression .. see #60
         self.read_bytes = self._init_read_bytes(vcf_reader)
@@ -109,6 +126,8 @@ class VcfReader(AbstractReader):
 
         for record in vcf_reader:
 
+
+            #elf.read_bytes += sys.getsizeof(record)
             self.read_bytes += self._get_record_size(record)
 
             # split row with multiple alt
@@ -124,14 +143,19 @@ class VcfReader(AbstractReader):
                     "filter": "" if record.FILTER is None else ",".join(record.FILTER)
                 }
 
+
+                forbidden_field = ("chr","pos","ref","alt","rsid","qual","filter")
+
                 # Parse info
                 for name in record.INFO:
-                    if isinstance(record.INFO[name], list):
-                        variant[name.lower()] = ",".join(
-                            [str(i) for i in record.INFO[name]]
-                        )
-                    else:
-                        variant[name.lower()] = record.INFO[name]
+                    if name.lower() not in forbidden_field:
+                        if isinstance(record.INFO[name], list):
+                            variant[name.lower()] = ",".join(
+                                [str(i) for i in record.INFO[name]]
+                            )
+                        else:
+                            variant[name.lower()] = record.INFO[name]
+
 
                 # parse sample
                 if record.samples:
@@ -300,11 +324,11 @@ class VcfReader(AbstractReader):
             + str(rec.INFO)
             + str(rec.FORMAT)
             + str(rec.samples)
-        )
+        ) - 10
 
     def _init_read_bytes(self, reader):
         """Init read bytes : It's the size in bytes of header data file"""
-        return len("".join(reader._column_headers)) + len("".join(reader._header_lines))
+        return 0
 
     def __repr__(self):
         return f"VCF Reader using {type(self.annotation_parser).__name__}"

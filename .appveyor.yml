@@ -9,7 +9,8 @@ init:
 
 install:
   - pip install -e .
-  - pip install fbs
+  - pip install PyInstaller==3.5
+  - pip install fbs==0.8.4
   - pip install pytest
   - pip install schema
   - pip install pywin32
@@ -18,7 +19,7 @@ install:
   - unzip sqlite-dll-win32-x86-3280000.zip
   - cd fbs
   - fbs freeze
-  - cp -R ..\cutevariant\ target\cutevariant\
+  - cp -R ..\cutevariant\ target\
   #- copy sqlite3.dll C:\Miniconda3\envs\test-environment\DLLs\
   #- python make_a_blob.py build_exe
   # - copy sqlite3.dll C:\Miniconda3\envs\test-environment\DLLs\
@@ -33,6 +34,6 @@ artifacts:
   
 build: off
 
-test_script:
-  - python -m pytest -vs tests
+# test_script:
+#   - python -m pytest -vs tests
 

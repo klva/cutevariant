@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         # store dock plugins
         self.plugins = {}
 
-        # The query model 
+        # The query model
         self.query_model = QueryModel()
 
 
@@ -61,21 +61,21 @@ class MainWindow(QMainWindow):
         self.footer_tab = QTabWidget()
 
         vsplit = QSplitter(Qt.Vertical)
-        vsplit.addWidget(self.central_tab)  
-        vsplit.addWidget(self.footer_tab)  
+        vsplit.addWidget(self.central_tab)
+        vsplit.addWidget(self.footer_tab)
         self.setCentralWidget(vsplit)
 
 
 
         # Status Bar
         self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)  
+        self.setStatusBar(self.status_bar)
 
-    
+
         # Setup UI
         self.setup_ui()
 
-      # Register plugins 
+      # Register plugins
         self.register_plugins()
 
 
@@ -92,7 +92,7 @@ class MainWindow(QMainWindow):
     #     #self.open("test.db")
 
         self.query_model.changed.connect(self.on_query_model_changed)
-    
+
 
 
 
@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
                 if plugin_widget_class.LOCATION == plugin.FOOTER_LOCATION:
                     self.footer_tab.addTab(widget, widget.windowTitle())
 
-   
+
 
     def setup_menubar(self):
         """Menu bar setup: items and actions"""
@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
         self.recent_files_menu = self.file_menu.addMenu(self.tr("Open recent"))
 
         self.setup_recent_menu()
-       
+
         self.recent_files_menu.addSeparator()
         self.recent_files_menu.addAction(self.tr("Clear"), self.clear_recent_projects)
 
@@ -173,6 +173,12 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(
             FIcon(0xF493), self.tr("Settings ..."), self.show_settings
         )
+
+        self.file_menu.addSeparator()
+
+
+
+        self.file_menu.addSeparator()
 
         self.file_menu.addSeparator()
         self.file_menu.addAction(self.tr("&Quit"), qApp.quit, QKeySequence.Quit)
@@ -195,7 +201,7 @@ class MainWindow(QMainWindow):
         # console_action.setCheckable(True)
         # console_action.setShortcuts([Qt.CTRL + Qt.Key_T])
         # console_action.toggled.connect(self.editor.setVisible)
-        
+
         self.view_menu.addSeparator()
 
         ## Help
@@ -219,7 +225,7 @@ class MainWindow(QMainWindow):
     #     """Add the given widget to the current (QTabWidget),
     #     and connect it to the query_dispatcher"""
     #     self.central_tab.addTab(widget, widget.windowTitle())
-    #     # self.query_dispatcher.addWidget(widget)
+    #     # self.query_dispatcher.addWidget(widgePt)
 
     # def current_tab_view(self):
     #     """Get the page/tab currently being displayed by the tab dialog
@@ -257,11 +263,11 @@ class MainWindow(QMainWindow):
         # Create connection
         self.conn = get_sql_connexion(filepath)
 
-        # Create central view 
-        # TODO: rename the class 
+        # Create central view
+        # TODO: rename the class
         self.query_model.conn = self.conn
         self.query_model.columns = ['favorite', 'classification', 'chr', 'pos', 'ref', 'alt', 'impact', 'symbol', 'feature', 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', 'gene_in_hpo_panel'] + [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
-        self.query_model.load()
+        # self.query_model.load()
 
         for name, _plugin in self.plugins.items():
             _plugin.on_open_project(self.conn)
@@ -270,7 +276,7 @@ class MainWindow(QMainWindow):
 
     def save_recent_project(self, path):
         """Save current project into QSettings
-        
+
         Args:
             path (str): path of project
         """
@@ -282,11 +288,11 @@ class MainWindow(QMainWindow):
 
     def get_recent_projects(self):
         """Return the list of recent projects stored in settings
-        
+
         Returns:
             list: Return list of recent project path
         """
-    
+
         # Reload last projects opened
         app_settings = QSettings()
         recent_projects = app_settings.value("recent_projects", list())
@@ -353,7 +359,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.status_bar.showMessage(e.__class__.__name__ + ": " + str(e))
                 raise
-    
+
 
     def show_settings(self):
         """Slot to show settings window"""
@@ -396,9 +402,9 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def write_settings(self):
-        """ Store the state of this mainwindow. 
+        """ Store the state of this mainwindow.
 
-        .. note:: This methods is called by closeEvent 
+        .. note:: This methods is called by closeEvent
         """
         app_settings = QSettings()
 
@@ -441,7 +447,7 @@ class MainWindow(QMainWindow):
     def on_variant_changed(self, variant):
         for name, _plugin in self.plugins.items():
             if _plugin.isVisible():
-                _plugin.on_variant_changed(variant) 
+                _plugin.on_variant_changed(variant)
 
 
 if __name__ == "__main__":

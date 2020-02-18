@@ -1141,7 +1141,7 @@ def update_sample(conn, sample: dict):
     conn.execute(query, sql_val)
     conn.commit()
 ## ============== VARIANTS QUERY THINGS ... ======================
-
+from cutevariant.core.vql import execute_vql
 
 class QueryBuilder(object):
     """A class to Create a variant Selection query 
@@ -1333,14 +1333,15 @@ class QueryBuilder(object):
                 else:
                     return f"`gt_{arg}`.`{field_name}`"
 
+        if column.startswith("variants.") or column in self.cache_variants_columns:
+            column = column.replace("variants.","")
+            return f"`variants`.`{column}`"
 
         if column.startswith("annotations.") or column in self.cache_annotations_columns:
             column = column.replace("annotations.","")
             return f"`annotations`.`{column}`"
         
-        if column.startswith("variants.") or column in self.cache_variants_columns:
-            column = column.replace("variants.","")
-            return f"`variants`.`{column}`"
+   
 
         return column
 
@@ -1521,6 +1522,18 @@ class QueryBuilder(object):
 
         return base + where
 
+    def set_from_vql(self, vql: str):
+        """Create a Query from vql 
+        
+        Args:
+            vql (str): vql grammar query 
+        """ 
+
+        result = next(execute_vql(vql))
+        if result["cmd"] == "select_cmd":
+            self.columns = result.get("columns", None)
+            self.selection = result.get("source", "variants")
+            self.filters = result.get("filter", None)
 
 
 
@@ -1630,7 +1643,7 @@ class QueryBuilder(object):
         
             
 
-    def count(self):
+    def count(self, grouped = False):
         """Wrapped function with a memoizing callable that saves up to the
         maxsize most recent calls.
 
@@ -1641,13 +1654,15 @@ class QueryBuilder(object):
             and it seems difficult to predict which fields will be requested
             by the user.
         """
-        query = self.sql(limit = None)
 
-        # Trick to accelerate UI refresh on basic queries
-        if self.selection == "variants" and not self.filters:
-            return self.conn.execute(
-                "SELECT MAX(variants.id) as count FROM variants"
-            ).fetchone()[0]
+        query = self.sql(grouped = grouped, limit = None)
+        print("grouped", grouped, query)
+
+        #Trick to accelerate UI refresh on basic queries
+        # if self.selection == "variants" and not self.filters:
+        #     return self.conn.execute(
+        #         "SELECT MAX(variants.id) as count FROM variants"
+        #     ).fetchone()[0]
 
         return self.conn.execute(
             f"SELECT COUNT(*) as count FROM ({query})"
