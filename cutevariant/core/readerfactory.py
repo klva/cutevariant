@@ -101,4 +101,14 @@ def create_reader(filepath):
         device.close()
         return
 
+    # TODO detect the format from the header rather than using a special
+    # extension
+    if ".aura" in path.suffixes:
+        device = open(filepath, "r")
+        reader = RvcfReader(device)
+        reader.file_size = os.path.getsize(filepath)
+        yield reader
+        device.close()
+        return
+
     raise Exception("create_reader:: Could not choose parser for this file.")

@@ -121,7 +121,7 @@ class FilePage(QWizardPage):
             self,
             self.tr("Open a file"),
             last_directory,
-            self.tr("VCF file (*.vcf *.vcf.gz);; CSV file (*.csv *.tsv *.txt)"),
+            self.tr("VCF file (*.vcf *.vcf.gz);; CSV file (*.csv *.tsv *.txt *.aura)"),
         )
 
         if filepath:
