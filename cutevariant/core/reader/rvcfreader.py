@@ -214,86 +214,10 @@ class RvcfReader(AbstractReader):
                 lines = defaultdict(list)
                 cur_recnum = line["RECNUM"]
 
-            # ALT computation
-            # This is a bit tricky because the ALT column is the same as in
-            # a VCF but the "Allele" field of VEP is not always the same as
-            # one of the values of the ALT column. So we need to find the
-            # actual ALT value
-            # TODO more detailed description
-            # TODO THIS MIGHT NOT HANDLE ALL CASES CORRECTLY, ESPECIALLY THE
-            # LAST BLOCK
-            # TODO clean up
+            # NOTE Although the name starts with INFO.CSQ, the Allele_id field
+            # is computed by the AURAGEN curation pipeline
             alts = line["ALT"].split(",")
-            ref = line["REF"]
-            allele = line["INFO.CSQ.Allele"]
-            if len(ref) == 1 and len(allele) == 1:
-                if allele in alts:
-                    alt = allele
-                else:
-                    alt = ref + allele
-                    if alt not in alts:
-                        LOGGER.error(
-                            " ".join(
-                                (
-                                    "Cannot handle line ! ref=",
-                                    ref,
-                                    "alts=",
-                                    alts,
-                                    "allele=",
-                                    allele,
-                                    "computed alt=",
-                                    alt,
-                                )
-                            )
-                        )
-                        continue
-            elif len(ref) == 1:
-                # VEP doesn't annotate * alleles so we can't have a - if
-                # the ref is only one base long
-                alt = ref[0] + allele
-                if alt not in alts:
-                    alt = allele
-                    if alt not in alts:
-                        LOGGER.error(
-                            " ".join(
-                                (
-                                    "Cannot handle line ! ref=",
-                                    ref,
-                                    "alts=",
-                                    alts,
-                                    "allele=",
-                                    allele,
-                                    "computed alt=",
-                                    alt,
-                                )
-                            )
-                        )
-                        continue
-            else:
-                if allele == "-":
-                    # In this case alt seems to be the shortest
-                    alt = min(alts, key=len)
-                else:
-                    alt = ref[0] + allele
-                    if alt not in alts:
-                        alt = allele
-                        if alt not in alts:
-                            LOGGER.error(
-                                " ".join(
-                                    (
-                                        "Cannot handle line ! ref=",
-                                        ref,
-                                        "alts=",
-                                        alts,
-                                        "allele=",
-                                        allele,
-                                        "computed alt=",
-                                        alt,
-                                    )
-                                )
-                            )
-                            continue
-
+            alt = alts[int(line["INFO.CSQ.Allele_index"]) - 1]
             lines[alt].append(line)
 
     def get_samples(self):
