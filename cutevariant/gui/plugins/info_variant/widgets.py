@@ -240,6 +240,7 @@ class InfoVariantWidget(PluginWidget):
             }
 
         sql.update_variant(self.conn, updated)
+        self.mainwindow.query_model.load()
 
         
 
