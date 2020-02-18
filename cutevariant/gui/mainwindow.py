@@ -266,8 +266,8 @@ class MainWindow(QMainWindow):
         # Create central view
         # TODO: rename the class
         self.query_model.conn = self.conn
-        self.query_model.columns = ['favorite', 'classification', 'chr', 'pos', 'ref', 'alt', 'impact', 'symbol', 'feature', 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', 'gene_in_hpo_panel'] + [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
-        # self.query_model.load()
+        self.query_model.columns = ['favorite', 'classification', 'chr', 'pos', 'ref', 'alt', "ac_orig", "gnomadv3_af", "clinvar_clnsig", 'impact', 'symbol', 'feature', 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', "expert_panel_diseases", 'gene_in_hpo_panel', "hpo_panel_diseases"] + [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
+        self.query_model.load()
 
         for name, _plugin in self.plugins.items():
             _plugin.on_open_project(self.conn)
