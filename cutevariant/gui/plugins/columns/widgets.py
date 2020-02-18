@@ -145,6 +145,7 @@ class ColumnsWidget(plugin.PluginWidget):
     def on_open_project(self,_conn):
         """ Overrided from PluginWidget """
         self.conn = _conn
+        self.columns = self.mainwindow.query_model.columns
 
     def on_query_model_changed(self, model):
         """ Overrided from PluginWidget """
