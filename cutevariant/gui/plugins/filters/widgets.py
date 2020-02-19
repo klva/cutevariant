@@ -686,7 +686,7 @@ class FilterModel(QAbstractItemModel):
         self.endInsertRows()
         self.filtersChanged.emit()
 
-    def add_condition_item(self, value=("chr", ">", "100"), parent=QModelIndex()):
+    def add_condition_item(self, value=("chr", "=", "100"), parent=QModelIndex()):
         """Add condition item 
         
         Args:
