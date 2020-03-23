@@ -4,6 +4,8 @@ from PySide2.QtWidgets import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 
+EXTRA_FIELDS = {"recnum", "id2", "qual", "filter", "format", "ac", "af", "an", "an_orig", "baseqranksum", "dp_orig", "excesshet", "fs", "inbreedingcoeff", "mq", "mqranksum", "qd", "readposranksum", "sor", "ds", "end", "mleac", "mleaf", "raw_mqanddp", "allele", "allele_index", "feature_type", "gq", "pid", "pl", "ps", "pgt"}
+
 class ColumnsModel(QStandardItemModel):
     """Model to store all fields available for variants, annotations and samples"""
 
@@ -90,6 +92,8 @@ class ColumnsModel(QStandardItemModel):
         root_item.setFont(font)
 
         for field in sql.get_field_by_category(self.conn,category):
+            if field["name"] in EXTRA_FIELDS:
+                continue
             item1 = QStandardItem(field["name"])
             item2 = QStandardItem(field["description"])
             item2.setToolTip(field["description"])
@@ -103,6 +107,26 @@ class ColumnsModel(QStandardItemModel):
             else:
                 item1.setData(field)
         
+        extra_item = QStandardItem("More..")
+        extra_item.setColumnCount(2)
+        extra_item.setIcon(FIcon(0xF412))
+        root_item.appendRow(extra_item)
+        for field in sql.get_field_by_category(self.conn,category):
+            if field["name"] not in EXTRA_FIELDS:
+                continue
+            item1 = QStandardItem(field["name"])
+            item2 = QStandardItem(field["description"])
+            item2.setToolTip(field["description"])
+            item1.setToolTip(field["description"])
+            item1.setCheckable(True)
+            extra_item.appendRow([item1, item2])
+            self.checkable_items.append(item1)
+
+            if category == "samples":
+                item1.setData({"name": ("genotype", parent_name, field["name"])})
+            else:
+                item1.setData(field)
+
         return root_item
 
 
