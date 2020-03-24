@@ -36,6 +36,7 @@ from cutevariant.commons import MAX_RECENT_PROJECTS, DIR_ICONS
 
 
 LOGGER = cm.logger()
+INITIAL_COLUMNS = ['favorite', 'classification', 'chr', 'pos', 'ref', 'alt', "ac_orig", "gnomadv3_af", "clinvar_clnsig", 'impact', 'symbol', 'transcript', 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', "expert_panel_diseases", 'gene_in_hpo_panel', "hpo_panel_diseases"]
 
 
 class MainWindow(QMainWindow):
@@ -266,7 +267,10 @@ class MainWindow(QMainWindow):
         # Create central view
         # TODO: rename the class
         self.query_model.conn = self.conn
-        self.query_model.columns = ['favorite', 'classification', 'chr', 'pos', 'ref', 'alt', "ac_orig", "gnomadv3_af", "clinvar_clnsig", 'impact', 'symbol', 'transcript', 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', "expert_panel_diseases", 'gene_in_hpo_panel', "hpo_panel_diseases"] + [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
+        present_fields = set(f["name"] for f in sql.get_fields(self.conn))
+        initial_columns = [x for x in INITIAL_COLUMNS if x in present_fields]
+        initial_columns += [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
+        self.query_model.columns = initial_columns
         self.query_model.load()
 
         for name, _plugin in self.plugins.items():
