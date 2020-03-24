@@ -141,6 +141,7 @@ class RvcfReader(AbstractReader):
         name = name.lower()
         # TODO this should be elsewhere to cover all readers
         name = name.replace("+", "")
+        name = name.replace(".", "")
         if name == "id":
             name = "id2"
 
