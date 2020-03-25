@@ -43,7 +43,12 @@ class AuragenFormatter(DefaultFormatter):
         if res:
             return res
 
-        if column in ("gene_in_expert_panel", "gene_in_hpo_panel"):
+        if column in (
+            "gene_in_expert_panel",
+            "gene_in_hpo_panel",
+            "clinvar_patho",
+            "in_tightlist",
+        ) or column.startswith("panel_"):
             # TODO generalize that to all bool fields
             if value == "True":
                 # Green tick
