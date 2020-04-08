@@ -9,6 +9,11 @@ import logging
 
 from cutevariant.core import sql
 from cutevariant.core.importer import async_import_file
+from cutevariant.gui.plugins.clinical_info.sql import (
+    create_clinical_info,
+    insert_clinical_info,
+    get_clinical_info,
+)
 
 
 def main():
@@ -19,6 +24,9 @@ def main():
     parser.add_argument("output", help="output file path")
     parser.add_argument(
         "--ped", help="ped file of the family, will be used to rename samples"
+    )
+    parser.add_argument(
+        "--clinical_info", help="Clinical information file to inject in the database"
     )
     args = parser.parse_args()
 
@@ -55,6 +63,30 @@ def main():
                         conn, {"id": sequenced_samples[cols[3]], "name": "mother"}
                     )
                     break
+
+    if args.clinical_info:
+        create_clinical_info(conn)
+        with open(args.clinical_info, "r") as clin_f:
+            field_name = None
+            field_type = None
+            field_value = ""
+            for line in clin_f:
+                line = line.rstrip()
+                # This is a header line
+                if line.startswith("["):
+                    # Save the previous field
+                    if field_name:
+                        insert_clinical_info(conn, field_name, field_type, field_value)
+                    field_name, field_type = line.strip("[]").split(":")
+                    field_value = ""
+                # This is a data line
+                else:
+                    if field_value:
+                        field_value += "\n"
+                    field_value += line
+            if field_name:
+                insert_clinical_info(conn, field_name, field_type, field_value)
+        print(get_clinical_info(conn))
 
 
 if __name__ == "__main__":
