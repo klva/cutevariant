@@ -2,7 +2,7 @@ from PySide2.QtGui import QColor, QFont, QIcon, QPalette
 from PySide2.QtWidgets import qApp
 
 import functools
-import re 
+import re
 
 from cutevariant.gui.formatter import Formatter
 from cutevariant.gui import FIcon, style
@@ -26,21 +26,19 @@ class DefaultFormatter(Formatter):
     @functools.lru_cache(maxsize=128)
     def get_font(self, column, value):
         return QFont()
-    
+
     @functools.lru_cache(maxsize=128)
     def get_background(self, column, value):
         return None
 
     @functools.lru_cache(maxsize=128)
     def get_foreground(self, column, value):
-        if "gene" in column:
-            return QColor(self.GENE_COLOR)
 
         # Draw cell depending column name
-        if column == "impact": 
+        if column == "impact":
             return self.IMPACT_COLOR[value]
 
-   
+
 
 
     @functools.lru_cache(maxsize=128)
@@ -64,7 +62,7 @@ class DefaultFormatter(Formatter):
             if value == 4:
                 return QIcon(FIcon(0xf3ad,style.DARK_COLOR["red"]))
             if value == 5:
-                return QIcon(FIcon(0xf3b0,style.DARK_COLOR["red"]))    
+                return QIcon(FIcon(0xf3b0,style.DARK_COLOR["red"]))
 
         if re.match(r"genotype(.+):gt", column):
             value = int(value)
