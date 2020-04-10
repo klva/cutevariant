@@ -15,6 +15,13 @@ from cutevariant.gui.plugins.clinical_info.sql import (
     get_clinical_info,
 )
 
+BUILTIN_SELECTIONS = {
+    "de-novo-gene-panel": "in_tightlist='True' AND variant_tag = 'de_novo' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
+    "biallelic-gene-panel": "in_tightlist='True' AND transcript_tag='biallelic' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
+    "de-novo-exome": "in_tightlist='True' AND variant_tag = 'de_novo'",
+    "biallelic-exome": "in_tightlist='True' AND transcript_tag='biallelic'",
+}
+
 
 def main():
     logger = logging.getLogger()
@@ -38,6 +45,13 @@ def main():
     logger.info("Importing database")
     for _, message in async_import_file(conn, args.input):
         print(message)
+
+    logger.info("Creating built-in selections")
+    builder = sql.QueryBuilder(conn)
+    for name, query in BUILTIN_SELECTIONS.items():
+        query = "SELECT chr,pos,ref,alt FROM variants WHERE " + query
+        builder.set_from_vql(query)
+        builder.save(name)
 
     if args.ped:
         sequenced_samples = {s["name"]: s["id"] for s in sql.get_samples(conn)}
