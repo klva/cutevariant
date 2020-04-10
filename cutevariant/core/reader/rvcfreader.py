@@ -1,8 +1,9 @@
 import csv
+import os
 from collections import defaultdict
 
 from .abstractreader import AbstractReader
-from cutevariant.commons import logger
+from cutevariant.commons import logger, DIR_DATA
 
 LOGGER = logger
 
@@ -33,6 +34,14 @@ class RvcfReader(AbstractReader):
         # separator, quoted only when necessary)
         self.csv_reader = csv.DictReader(device)
         self.parse_samples()
+
+        # We store the definitions for all fields in a csv file, since they
+        # can't be built in the annotation file unlike VCF
+        with open(
+            os.path.join(DIR_DATA, "auragen_field_descriptions.csv"), "r"
+        ) as desc_f:
+            reader = csv.DictReader(desc_f)
+            self.descriptions = {r["field"]: r["description"] for r in reader}
 
     def get_fields(self):
         # TODO Use VEP AnnotationParser ?
@@ -80,7 +89,7 @@ class RvcfReader(AbstractReader):
             yield {
                 "name": name,
                 "category": category,
-                "description": "",
+                "description": self.descriptions.get(name, ""),
                 "type": field_type,
             }
 
@@ -88,8 +97,8 @@ class RvcfReader(AbstractReader):
         yield {
             "name": "raw_gt",
             "category": "samples",
-            "description": "genotype as it appeared in the VCF file",
-            "type": "str"
+            "description": self.descriptions.get("raw_gt", ""),
+            "type": "str",
         }
 
     def convert_gt(self, gt):

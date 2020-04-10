@@ -5,7 +5,7 @@ import datetime as dt
 import tempfile
 from pkg_resources import resource_filename
 import gzip
-import io 
+import io
 # Misc
 MAX_RECENT_PROJECTS = 5
 MIN_COMPLETION_LETTERS = 1
@@ -19,6 +19,7 @@ DIR_TRANSLATIONS = DIR_ASSETS + "i18n/"
 DIR_FONTS = DIR_ASSETS + "fonts/"
 DIR_ICONS = DIR_ASSETS + "icons/"
 DIR_STYLES = DIR_ASSETS + "styles/"
+DIR_DATA = DIR_ASSETS + "data/"
 
 GENOTYPE_ICONS = {0: 0xF130, 1: 0xFAA0, 2: 0xFAA4, -1: 0xF625}
 
@@ -106,5 +107,5 @@ def get_uncompressed_size(filepath):
     This size is stored in the last 4 bytes of the file.
     """
     with gzip.open(filepath, 'rb') as file_obj:
-        return file_obj.seek(0, io.SEEK_END) 
+        return file_obj.seek(0, io.SEEK_END)
 

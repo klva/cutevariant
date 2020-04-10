@@ -1,0 +1,120 @@
+field,description
+favorite,Variation à rapporter
+comment,Commentaire
+classification,Classification ACMG manuelle (1-5)
+chr,chromosome
+pos,position génomique
+ref,Allèle de référence
+alt,Allèle alternatif
+recnum,Position dans le VCF
+id2,
+qual,Score de qualité GATK
+filter,Filtre donné par GATK
+format,
+ac,Compte d’allèles dans l’analyse/famille
+ac_orig,Compte d’allèles dans la cohorte
+af,Fréquence allélique dans l’analyse/famille
+af_orig,Fréquence allélique dans le trio
+an,Nombre d’allèles dans l’analyse/famille
+an_orig,Nombre d’allèles dans la cohorte
+baseqranksum,
+dp,Profondeur de séquençage dans l’analyse/famille
+dp_orig,Profondeur de séquençage dans a cohorte
+excesshet,
+fs,
+inbreedingcoeff,
+mq,
+mqranksum,
+qd,
+readposranksum,
+sor,
+ds,
+end,
+mleac,
+mleaf,
+raw_mqanddp,
+allele,
+consequence,Détail de la conséquence du variant
+impact,Catégorisation en 5 des conséquences
+symbol,Nom du gène
+gene,ID du gène
+feature_type,type de motif annoté
+transcript,identifiant ENST
+biotype,type de transcrit
+exon,numéro d’exon
+intron,numéro d’intron
+hgvsc,variation nucléotidique
+hgvsp,variation protéique
+cdna_position,position sur le transcrit
+cds_position,position sur le CDS
+protein_position,position protéique
+amino_acids,résidus impactés
+codons,codons
+existing_variation,
+distance,
+strand,
+flags,
+variant_class,
+symbol_source,
+hgnc_id,
+canonical,
+mane,
+tsl,
+appris,
+ccds,identifiant protéique
+ensp,identifiant protéique
+swissprot,
+trembl,
+uniparc,
+refseq,identifiant RefSeq du transcrit
+source,???
+gene_pheno,gène associé à une pathologie
+sift,score sift
+polyphen,score polyphen
+domains,domaines protéiques
+hgvs_offset,
+hgvsg,variation génomique
+somatic,rapportée dans un cancer (0|1)
+pheno,phénotype associé (0|1)
+pubmedcadd_phred,score CADD phred
+cadd_raw,score CADD brut
+fathmm_pred,
+fathmm_score,score FATHMM
+gerp_rs,score GERP
+interpro_domain,domaine protéique interpro
+gnomadv211_pli,Score pLI (gnomadv2.1.1)
+clinvar,
+clinvar_clnsig,classification clinvar
+clinvar_clndisdb,identifiant clinvar
+clinvar_clnrevstat,Status de révision clinvar
+clinvar_clnsigconf,détail des interprétations clinvar
+gnomadv3,
+gnomadv3_ac,Compte d’allèles dans GnomADv3
+gnomadv3_af,Fréquence allélique dans GnomADv3
+gnomadv3_nhomalt,Compte de génotypes homozygotes dans GnomADv3
+allele_index,
+clinvar_patho,proposition de classification clinvar
+variant_tag,Transmission du variant
+zygosity,
+in_roh,dans une région d’homozygotie
+gene_diseases_numbers,OMIM ID
+gene_diseases_names,nom de pathologie OMIM
+gene_in_expert_panel,gène dans le panel filière
+gene_in_hpo_panel,gène dans le panel HPO dynamique
+phrank_rank,Rang phrank
+phrank_score,Score phrank
+in_tightlist,dans la liste de variants d’intérêts
+transcript_tag,variants en trans
+transcript_worse_impacts,impact le plus élevé de variations en trans
+tightlist_transcript_tag,variants en trans parmi les variants d’intérêt
+tightlist_transcript_worse_impacts,impact le plus élevés parmi les variations en trans d’intérêt
+phenotype_tag,ségrégation génotype/phénotype
+gt,"Génotype retenu, symbole"
+ad,Compte des lecture pour chaque allèle
+gq,Qualité du génotype
+pgt,
+pid,
+pl,
+ps,
+raw_gt,Génotype retenu
+vaf,Balance allélique
