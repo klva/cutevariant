@@ -336,7 +336,7 @@ class QueryModel(QAbstractItemModel):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
                 if section == 0:
-                    return "children"
+                    return "transcripts"
                 else:
                     return self.builder.headers()[section]
         return None
