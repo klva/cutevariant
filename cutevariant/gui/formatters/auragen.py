@@ -48,6 +48,7 @@ class AuragenFormatter(DefaultFormatter):
             "gene_in_hpo_panel",
             "clinvar_patho",
             "in_tightlist",
+            "in_roh",
         ) or column.startswith("panel_"):
             # TODO generalize that to all bool fields
             if value == "True":
