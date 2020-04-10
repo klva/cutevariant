@@ -1,14 +1,16 @@
-
 import re
+import os
+import getpass
+import datetime
 
 
 from cutevariant.gui import plugin, FIcon
 from cutevariant.gui import formatter
+from cutevariant.core.writer.auragenwriter import AuragenWriter
 
 from PySide2.QtWidgets import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-
 
 
 class QueryDelegate(QStyledItemDelegate):
@@ -39,7 +41,6 @@ class QueryDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
     
-
         palette = qApp.palette("QTreeView")
         #  get column name of the index
         #colname = index.model().headerData(index.column(), Qt.Horizontal)
@@ -61,8 +62,6 @@ class QueryDelegate(QStyledItemDelegate):
         painter.setPen(Qt.NoPen)
         painter.drawRect(option.rect)
         painter.restore()
-
-       
 
         painter.save()
         alignement = Qt.AlignLeft | Qt.AlignVCenter
@@ -92,12 +91,9 @@ class QueryDelegate(QStyledItemDelegate):
 
             painter.drawText(option.rect, alignement, str(index.data()))
         
-        
         painter.restore()
 
-
         #super().paint(painter,option, index)
-
 
         # # Add margin for first columns if index is first level
         # if index.column() == 0 and index.parent() == QModelIndex():
@@ -178,8 +174,6 @@ class QueryDelegate(QStyledItemDelegate):
         # )
         # painter.drawText(option.rect, alignement, str(index.data()))
 
-
-
     def sizeHint(self, option, index):
         """Override: Return row height"""
 
@@ -215,16 +209,15 @@ class QueryTreeView(QTreeView):
 
     #     super().drawBranches(painter, rect, index)
 
+
 class QueryViewWidget(plugin.PluginWidget):
     """Contains the view of query with several controller"""
 
     variant_clicked = Signal(dict)
     LOCATION = plugin.CENTRAL_LOCATION
 
-
     def __init__(self, parent = None):
         super().__init__(parent)
-
 
         self.delegate = QueryDelegate()
         self.setWindowTitle(self.tr("Variants"))
@@ -255,10 +248,10 @@ class QueryViewWidget(plugin.PluginWidget):
         self.topbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         # Construct top bar
         # These actions should be disabled until a query is made (see query setter)
-        self.export_csv_action = self.topbar.addAction(
-            FIcon(0xF207), self.tr("Export variants"), self.export_csv
-        )
-        self.export_csv_action.setEnabled(False)
+        # self.export_csv_action = self.topbar.addAction(
+            # FIcon(0xF207), self.tr("Export variants"), self.export_csv
+        # )
+        # self.export_csv_action.setEnabled(False)
 
         self.grouped_action = self.topbar.addAction(FIcon(0xF191), "Group variant")
         self.grouped_action.setCheckable(True)
@@ -269,6 +262,11 @@ class QueryViewWidget(plugin.PluginWidget):
         self.save_action.setToolTip("Save current selections")
         self.save_action.triggered.connect(self.on_save_clicked)
 
+        self.finished_action = self.topbar.addAction(
+            FIcon(0xF12D), "Interprétation Terminée"
+        )
+        self.finished_action.setToolTip("Valider l'interprétation")
+        self.finished_action.triggered.connect(self.on_finish_interpretation)
 
         # Add spacer to push next buttons to the right
         spacer = QWidget()
@@ -296,7 +294,6 @@ class QueryViewWidget(plugin.PluginWidget):
             FIcon(0xF865), self.tr("See SQL query"), self.show_sql
         )
 
-
         self.formatter_combo = QComboBox()
 
         for Object in formatter.find_formatters():
@@ -318,9 +315,6 @@ class QueryViewWidget(plugin.PluginWidget):
 
         self.setLayout(main_layout)
 
-
-
-
     def setup_ui(self):
         self.bottombar.addAction(FIcon(0xF792), "<<", self.model.firstPage)
         self.bottombar.addAction(FIcon(0xF04D), "<", self.model.previousPage)
@@ -330,7 +324,6 @@ class QueryViewWidget(plugin.PluginWidget):
         self.page_box.returnPressed.connect(self._update_page)
         self.model.modelReset.connect(self.updateInfo)
         self.view.selectionModel().currentRowChanged.connect(self._variant_clicked)
-
 
     def on_register(self, mainwindow):
         """ Override from PluginWidget """
@@ -347,8 +340,6 @@ class QueryViewWidget(plugin.PluginWidget):
     def on_open_project(self, conn):
         """ Override from PluginWidget """
         pass
-
-
 
     def updateInfo(self):
         """Update metrics for the current query
@@ -449,8 +440,6 @@ class QueryViewWidget(plugin.PluginWidget):
         box.setDetailedText(text)
         box.exec_()
 
-
-
     def contextMenuEvent(self, event: QContextMenuEvent):
         """Overrided method: Show custom context menu associated to the current variant"""
         menu = QMenu(self)
@@ -464,30 +453,34 @@ class QueryViewWidget(plugin.PluginWidget):
         variant_id = self.model.variant(index)[0]
         variant = sql.get_one_variant(self.model.conn, variant_id)
 
-
         if "favorite" in variant:
             if not variant["favorite"]:
                 msg = "Mark variant"
-                icon = FIcon(0xf4d2)
+                icon = FIcon(0xF4D2)
             else:
                 msg = "Unmark variant"
-                icon = FIcon(0xf4ce)
-            menu.addAction(icon, msg, lambda : self.model.set_favorite(index,not variant["favorite"]))
+                icon = FIcon(0xF4CE)
+            menu.addAction(
+                icon,
+                msg,
+                lambda: self.model.set_favorite(index, not variant["favorite"]),
+            )
 
         menu.addSeparator()
         # Create copy action 
         cell_value = self.model.variant(index)[index.column()]
-        menu.addAction(FIcon(0xf18f),
+        menu.addAction(
+            FIcon(0xF18F),
         f"Copy {cell_value}", 
-        lambda : qApp.clipboard().setText(str(self.model.variant(index)))
+            lambda: qApp.clipboard().setText(str(self.model.variant(index))),
         )
 
         genomic_location = "{chr}:{pos}{ref}>{alt}".format(**variant)
-        menu.addAction(FIcon(0xf18f),
+        menu.addAction(
+            FIcon(0xF18F),
         f"Copy {genomic_location}", 
-        lambda : qApp.clipboard().setText(genomic_location)
+            lambda: qApp.clipboard().setText(genomic_location),
         )
-
 
         menu.addSeparator()
 
@@ -500,14 +493,15 @@ class QueryViewWidget(plugin.PluginWidget):
         urls = {}
         for key in settings.childKeys():
             url = QUrl(settings.value(key).format(**variant))
-            open_with_action.addAction(FIcon(0xf339), key,  lambda url=url : QDesktopServices.openUrl(url))
+            open_with_action.addAction(
+                FIcon(0xF339), key, lambda url=url: QDesktopServices.openUrl(url)
+            )
 
         settings.endGroup()
 
         menu.addMenu(open_with_action)
 
         menu.exec_(event.globalPos())
-
 
     def _update_page(self):
         """Set page from page_box edit. When user set a page manually, this method is called"""
@@ -522,8 +516,53 @@ class QueryViewWidget(plugin.PluginWidget):
 
             self.model.changed.emit()
 
-
-
+    def on_finish_interpretation(self):
+        """Called when the finish interpretation button is clicked
+        """
+        conn = self.model.conn
+        message = """<b>Attention</b><br><br>
+Vous vous apprêtez a valider votre interprétation pour ce dossier. Si vous
+n'avez pas terminé votre interprétation, vous pouvez quitter (menu Fichier >
+Quitter) et revenir plus tard, vos annotations sont automatiquement
+sauvegardées.<br><br>
+Tous les variants que vous avez marqué comme "favoris" seront exportés pour
+discussion.
+"""
+        # We need to customize the message with the number of variant marked as
+        # favorite
+        ret = conn.execute(
+            "SELECT COUNT(DISTINCT recnum) FROM variants WHERE favorite = 1"
+        )
+        count = ret.fetchone()[0]
+        if count == 0:
+            message += "<b>Actuellement aucun variant n'est marqué comme favori !</b>"
+        else:
+            message += f"Actuellement, {count} variants seront transférés."
+        # Show the message box
+        message_box = QMessageBox(
+            QMessageBox.Icon.Warning,
+            "Valider l'interprétation ?",
+            message,
+            buttons=QMessageBox.Ok | QMessageBox.Cancel,
+            defaultButton=QMessageBox.Cancel,
+        )
+        message_box.setButtonText(QMessageBox.Ok, "Valider l'interprétation")
+        message_box.setButtonText(QMessageBox.Cancel, "Annuler")
+        if message_box.exec_() == QMessageBox.Ok:
+            db_path = conn.execute("PRAGMA database_list").fetchone()[2]
+            base_path = os.path.dirname(db_path)
+            date = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+            export_name = f"export_{getpass.getuser()}_{date}.tsv"
+            with open(os.path.join(base_path, export_name), "w") as device:
+                AuragenWriter(device).save(conn)
+            QMessageBox.information(
+                self,
+                "Interprétation validée",
+                "Votre interprétation a été validée et exportée. CuteVariant "
+                "va quitter. Vous pouvez ouvrir un autre dossier en utilisant "
+                "le bouton 'Reconnect' de guacamole.",
+            )
+            qApp.exit()
 
 
 if __name__ == "__main__":
@@ -538,5 +577,4 @@ if __name__ == "__main__":
     w = QueryViewWidget()
     w.show()
     
-
     app.exec_()
