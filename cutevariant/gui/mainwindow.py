@@ -36,7 +36,7 @@ from cutevariant.commons import MAX_RECENT_PROJECTS, DIR_ICONS
 
 
 LOGGER = cm.logger()
-INITIAL_COLUMNS = ['favorite', 'classification', 'chr', 'pos', 'ref', 'alt', "ac_orig", "gnomadv3_af", "clinvar_clnsig", 'impact', 'symbol', 'transcript', 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', 'gene_in_hpo_panel', "panel_cosmic", "panel_oncogen"]
+INITIAL_COLUMNS = ['favorite', 'classification', "hgvsg", "transcript", 'impact', "symbol", "transcript_location", "protein_location", "clinvar_patho", "gnomadv3_af", "gene_diseases_names", 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', 'gene_in_hpo_panel', "panel_cosmic", "panel_oncogen"]
 
 
 class MainWindow(QMainWindow):
