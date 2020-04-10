@@ -17,9 +17,9 @@ from cutevariant.gui.plugins.clinical_info.sql import (
 
 BUILTIN_SELECTIONS = {
     "de-novo-gene-panel": "in_tightlist='True' AND variant_tag = 'de_novo' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
-    "biallelic-gene-panel": "in_tightlist='True' AND transcript_tag='biallelic' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
+    "biallelic-gene-panel": "in_tightlist='True' AND tightlist_transcript_tag='biallelic' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
     "de-novo-exome": "in_tightlist='True' AND variant_tag = 'de_novo'",
-    "biallelic-exome": "in_tightlist='True' AND transcript_tag='biallelic'",
+    "biallelic-exome": "in_tightlist='True' AND tightlist_transcript_tag='biallelic'",
 }
 
 
