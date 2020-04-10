@@ -40,7 +40,7 @@ class QueryDelegate(QStyledItemDelegate):
         return base_brush
 
     def paint(self, painter, option, index):
-    
+
         palette = qApp.palette("QTreeView")
         #  get column name of the index
         #colname = index.model().headerData(index.column(), Qt.Horizontal)
@@ -79,7 +79,7 @@ class QueryDelegate(QStyledItemDelegate):
 
         if font:
             painter.setFont(QFont())
-        
+
         if fg_color:
             painter.setPen(QPen(fg_color))
 
@@ -90,7 +90,7 @@ class QueryDelegate(QStyledItemDelegate):
         else:
 
             painter.drawText(option.rect, alignement, str(index.data()))
-        
+
         painter.restore()
 
         #super().paint(painter,option, index)
@@ -187,9 +187,9 @@ class QueryTreeView(QTreeView):
         super().__init__()
 
     # def drawBranches(self, painter, rect, index):
-    #     """ overrided : Draw Branch decorator with background 
-        
-    #     Backround is not alternative for children but inherits from parent 
+    #     """ overrided : Draw Branch decorator with background
+
+    #     Backround is not alternative for children but inherits from parent
 
     #     """
     #     if self.itemDelegate().__class__ is not QueryDelegate:
@@ -297,7 +297,7 @@ class QueryViewWidget(plugin.PluginWidget):
         self.formatter_combo = QComboBox()
 
         for Object in formatter.find_formatters():
-            self.formatters.append(Object()) 
+            self.formatters.append(Object())
             self.formatter_combo.addItem(str(Object.__module__))
 
         self.formatter_combo.activated.connect(self.on_formatter_changed)
@@ -307,7 +307,7 @@ class QueryViewWidget(plugin.PluginWidget):
         self.show_sql_action.setEnabled(False)
         self.bottombar.addWidget(self.page_info)
         self.bottombar.addWidget(spacer)
-      
+
         self.bottombar.setIconSize(QSize(16, 16))
         self.bottombar.setMaximumHeight(30)
 
@@ -373,13 +373,13 @@ class QueryViewWidget(plugin.PluginWidget):
         """
 
         if not index.isValid():
-            return 
+            return
         # Get the rowid of the element at the given index
         rowid = self.model.variant(index)[0]
         # Get data from database
         variant = sql.get_one_variant(self.model.conn, rowid)
         # Emit variant through variant_clicked signal
-        
+
         if self.mainwindow:
             self.mainwindow.on_variant_changed(variant)
 
@@ -444,7 +444,7 @@ class QueryViewWidget(plugin.PluginWidget):
         """Overrided method: Show custom context menu associated to the current variant"""
         menu = QMenu(self)
 
-        # Get variant data 
+        # Get variant data
         index = self.view.indexAt(self.view.viewport().mapFromGlobal(event.globalPos()))
 
         if not index:
@@ -467,18 +467,18 @@ class QueryViewWidget(plugin.PluginWidget):
             )
 
         menu.addSeparator()
-        # Create copy action 
+        # Create copy action
         cell_value = self.model.variant(index)[index.column()]
         menu.addAction(
             FIcon(0xF18F),
-        f"Copy {cell_value}", 
-            lambda: qApp.clipboard().setText(str(self.model.variant(index))),
+        f"Copy {cell_value}",
+        lambda : qApp.clipboard().setText(str(cell_value))
         )
 
         genomic_location = "{chr}:{pos}{ref}>{alt}".format(**variant)
         menu.addAction(
             FIcon(0xF18F),
-        f"Copy {genomic_location}", 
+        f"Copy {genomic_location}",
             lambda: qApp.clipboard().setText(genomic_location),
         )
 
@@ -486,7 +486,7 @@ class QueryViewWidget(plugin.PluginWidget):
 
         from functools import partial
 
-        # Create open with action 
+        # Create open with action
         open_with_action = QMenu(self.tr("Open with"))
         settings = QSettings()
         settings.beginGroup("plugins/query_view/links")
@@ -567,7 +567,7 @@ discussion.
 
 if __name__ == "__main__":
     import sys
-    from PySide2.QtWidgets import QApplication 
+    from PySide2.QtWidgets import QApplication
 
     def test():
         print("salut")
@@ -576,5 +576,5 @@ if __name__ == "__main__":
 
     w = QueryViewWidget()
     w.show()
-    
+
     app.exec_()
