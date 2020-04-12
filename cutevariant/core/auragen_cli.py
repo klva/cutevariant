@@ -53,31 +53,6 @@ def main():
         builder.set_from_vql(query)
         builder.save(name)
 
-    if args.ped:
-        sequenced_samples = {s["name"]: s["id"] for s in sql.get_samples(conn)}
-        logger.info("Renaming samples")
-        with open(args.ped, "r") as ped_f:
-            for line in ped_f:
-                if line.startswith("#"):
-                    continue
-                cols = line.rstrip().split("\t")
-                if cols[1] in sequenced_samples:
-                    if {cols[2], cols[3]} & {"", "0"}:
-                        continue
-                    logger.info(
-                        f"Index is {cols[1]}, father {cols[2]}, mother {cols[3]}"
-                    )
-                    sql.update_sample(
-                        conn, {"id": sequenced_samples[cols[1]], "name": "index"}
-                    )
-                    sql.update_sample(
-                        conn, {"id": sequenced_samples[cols[2]], "name": "father"}
-                    )
-                    sql.update_sample(
-                        conn, {"id": sequenced_samples[cols[3]], "name": "mother"}
-                    )
-                    break
-
     if args.clinical_info:
         create_clinical_info(conn)
         with open(args.clinical_info, "r") as clin_f:
@@ -100,7 +75,34 @@ def main():
                     field_value += line
             if field_name:
                 insert_clinical_info(conn, field_name, field_type, field_value)
-        print(get_clinical_info(conn))
+
+        # Inject family info in the clinical information pane as well
+        if args.ped:
+            field_name = "Individus"
+            field_type = "longtext"
+            sequenced_samples = {s["name"]: s["id"] for s in sql.get_samples(conn)}
+            index = None
+            with open(args.ped, "r") as ped_f:
+                for line in ped_f:
+                    if line.startswith("#"):
+                        continue
+                    cols = line.rstrip().split("\t")
+                    if cols[1] not in sequenced_samples:
+                        continue
+                    if {cols[2], cols[3]} & {"", "0"}:
+                        continue
+                    index = cols[1]
+                    father = cols[2]
+                    mother = cols[3]
+                    logger.info(
+                        f"Index is {cols[1]}, father {cols[2]}, mother {cols[3]}"
+                    )
+                    break
+            if index:
+                field_value = f"""{index} => index
+{father} => père
+{mother} => mère"""
+                insert_clinical_info(conn, field_name, field_type, field_value)
 
 
 if __name__ == "__main__":
