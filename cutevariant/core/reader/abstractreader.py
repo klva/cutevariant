@@ -136,7 +136,7 @@ class AbstractReader(ABC):
         for variant in self.get_variants():
             variant["favorite"] = False
             variant["comment"] = ""
-            variant["classification"] = 3
+            variant["classification"] = 0
             yield variant
 
 
