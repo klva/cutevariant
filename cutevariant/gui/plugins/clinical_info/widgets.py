@@ -46,16 +46,12 @@ class ClinicalInfoWidget(PluginWidget):
         return widget
 
     def on_open_project(self, conn):
-        print("open project")
         clinical_info = get_clinical_info(conn)
-        print(clinical_info)
         if not clinical_info:
-            print("non")
             # Table is absent or empty
             label = QLabel("No clinical information in this project")
             self.scroll_area.setWidget(label)
         else:
-            print("oui")
             scroll_widget = QWidget()
             scroll_widget.setSizePolicy(
                 QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
