@@ -1583,7 +1583,7 @@ class QueryBuilder(object):
 
         """
         self.conn.row_factory = sqlite3.Row
-        sql = self.sql(limit, offset)
+        sql = self.sql(limit=limit, offset=offset)
         LOGGER.debug(sql)
 
         for variant in self.conn.execute(sql):
