@@ -16,10 +16,10 @@ from cutevariant.gui.plugins.clinical_info.sql import (
 )
 
 BUILTIN_SELECTIONS = {
-    "de-novo-gene-panel": "in_tightlist='True' AND variant_tag = 'de_novo' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
-    "biallelic-gene-panel": "in_tightlist='True' AND tightlist_transcript_tag='biallelic' AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
-    "de-novo-exome": "in_tightlist='True' AND variant_tag = 'de_novo'",
-    "biallelic-exome": "in_tightlist='True' AND tightlist_transcript_tag='biallelic'",
+    "de_novo_exome": "variant_tag IN ('de_novo', 'possible_de_novo') AND (impact IN ('HIGH', 'MODERATE') OR consequence LIKE '%splice_region_variant%')",
+    "biallelic_exome": "transcript_tag IN ('biallelic', 'possible_biallelic') AND transcript_worse_impacts IN ('HIGH-HIGH', 'HIGH-MODERATE', 'HIGH-LOW', 'MODERATE-HIGH', 'MODERATE-MODERATE', 'MODERATE-LOW', 'LOW-HIGH', 'LOW-MODERATE', 'LOW-LOW')",
+    "de_novo_panel": "variant_tag IN ('de_novo', 'possible_de_novo') AND (impact IN ('HIGH', 'MODERATE') OR consequence LIKE '%splice_region_variant%') AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
+    "biallelic_panel": "transcript_tag IN ('biallelic', 'possible_biallelic') AND transcript_worse_impacts IN ('HIGH-HIGH', 'HIGH-MODERATE', 'HIGH-LOW', 'MODERATE-HIGH', 'MODERATE-MODERATE', 'MODERATE-LOW', 'LOW-HIGH', 'LOW-MODERATE', 'LOW-LOW') AND (gene_in_expert_panel = 'True' OR gene_in_hpo_panel = 'True')",
 }
 
 
