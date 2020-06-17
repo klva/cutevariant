@@ -35,6 +35,11 @@ def main():
     parser.add_argument(
         "--clinical_info", help="Clinical information file to inject in the database"
     )
+    parser.add_argument(
+        "--disable_selections",
+        help="Disable creation of built in selections",
+        action="store_true",
+    )
     args = parser.parse_args()
 
     if os.path.exists(args.output):
@@ -46,12 +51,13 @@ def main():
     for _, message in async_import_file(conn, args.input):
         print(message)
 
-    logger.info("Creating built-in selections")
-    builder = sql.QueryBuilder(conn)
-    for name, query in BUILTIN_SELECTIONS.items():
-        query = "SELECT chr,pos,ref,alt FROM variants WHERE " + query
-        builder.set_from_vql(query)
-        builder.save(name)
+    if not args.disable_selections:
+        logger.info("Creating built-in selections")
+        builder = sql.QueryBuilder(conn)
+        for name, query in BUILTIN_SELECTIONS.items():
+            query = "SELECT chr,pos,ref,alt FROM variants WHERE " + query
+            builder.set_from_vql(query)
+            builder.save(name)
 
     if args.clinical_info:
         create_clinical_info(conn)
