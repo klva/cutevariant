@@ -55,9 +55,12 @@ def main():
         logger.info("Creating built-in selections")
         builder = sql.QueryBuilder(conn)
         for name, query in BUILTIN_SELECTIONS.items():
-            query = "SELECT chr,pos,ref,alt FROM variants WHERE " + query
-            builder.set_from_vql(query)
-            builder.save(name)
+            try:
+                query = "SELECT chr,pos,ref,alt FROM variants WHERE " + query
+                builder.set_from_vql(query)
+                builder.save(name)
+            except Exception:
+                logger.warning(f"Failled to create selection {name}")
 
     if args.clinical_info:
         create_clinical_info(conn)
