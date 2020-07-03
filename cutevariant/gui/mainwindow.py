@@ -17,14 +17,17 @@ from cutevariant.gui.ficon import FIcon
 from cutevariant.gui.querymodel import QueryModel
 from cutevariant.gui.wizards import ProjectWizard
 from cutevariant.gui.settings import SettingsWidget
+
 # from cutevariant.gui.querywidget import QueryWidget
 # from cutevariant.gui import plugin
 
 #  Import plugins
 from cutevariant.gui import plugin
-#from cutevariant.gui.plugins.editor.plugin import EditorPlugin
+
+# from cutevariant.gui.plugins.editor.plugin import EditorPlugin
 
 from cutevariant.gui.aboutcutevariant import AboutCutevariant
+
 # from cutevariant.gui.chartquerywidget import ChartQueryWidget
 from cutevariant import commons as cm
 from cutevariant.commons import MAX_RECENT_PROJECTS, DIR_ICONS
@@ -37,7 +40,25 @@ from cutevariant.commons import MAX_RECENT_PROJECTS, DIR_ICONS
 
 
 LOGGER = cm.logger()
-INITIAL_COLUMNS = ['favorite', 'classification', "hgvsg", "transcript", 'impact', "symbol", "transcript_location", "protein_location", "clinvar_patho", "gnomadv3_af", "gene_diseases_names", 'variant_tag', 'transcript_tag', 'gene_in_expert_panel', 'gene_in_hpo_panel', "panel_cosmic", "panel_oncogen"]
+INITIAL_COLUMNS = [
+    "favorite",
+    "classification",
+    "hgvsg",
+    "transcript",
+    "impact",
+    "symbol",
+    "transcript_location",
+    "protein_location",
+    "clinvar_patho",
+    "gnomadv3_af",
+    "gene_diseases_names",
+    "variant_tag",
+    "transcript_tag",
+    "gene_in_expert_panel",
+    "gene_in_hpo_panel",
+    "panel_cosmic",
+    "panel_oncogen",
+]
 
 
 class MainWindow(QMainWindow):
@@ -55,9 +76,8 @@ class MainWindow(QMainWindow):
         # store dock plugins
         self.plugins = {}
 
-        # The query model
+        #  The query model
         self.query_model = QueryModel()
-
 
         self.central_tab = QTabWidget()
         self.footer_tab = QTabWidget()
@@ -67,31 +87,24 @@ class MainWindow(QMainWindow):
         vsplit.addWidget(self.footer_tab)
         self.setCentralWidget(vsplit)
 
-
-
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
 
-
         # Setup UI
         self.setup_ui()
 
-      # Register plugins
+        # Register plugins
         self.register_plugins()
-
-
-
 
         # Window geometry
         self.resize(600, 400)
         self.setGeometry(qApp.desktop().rect().adjusted(100, 100, -100, -100))
 
-
         # Restores the state of this mainwindow's toolbars and dockwidgets
         self.read_settings()
 
-    #     #self.open("test.db")
+        #     #self.open("test.db")
 
         self.query_model.changed.connect(self.on_query_model_changed)
         signal.signal(signal.SIGTERM, self.sigterm_handler)
@@ -105,8 +118,6 @@ class MainWindow(QMainWindow):
         # Setup menubar
         self.setup_menubar()
         self.setup_toolbar()
-
-
 
     def add_panel(self, widget, area=Qt.LeftDockWidgetArea):
         """Add given widget to a new QDockWidget and to view menu in menubar"""
@@ -141,7 +152,6 @@ class MainWindow(QMainWindow):
                 widget.setToolTip(extension.get("description"))
                 widget.on_register(self)
 
-
                 if plugin_widget_class.LOCATION == plugin.DOCK_LOCATION:
                     self.add_panel(widget)
 
@@ -151,14 +161,12 @@ class MainWindow(QMainWindow):
                 if plugin_widget_class.LOCATION == plugin.FOOTER_LOCATION:
                     self.footer_tab.addTab(widget, widget.windowTitle())
 
-
-
     def setup_menubar(self):
         """Menu bar setup: items and actions"""
         ## File Menu
         self.file_menu = self.menuBar().addMenu(self.tr("&File"))
         # self.new_project_action = self.file_menu.addAction(
-            # FIcon(0xF415), self.tr("&New project"), self.new_project, QKeySequence.New
+        # FIcon(0xF415), self.tr("&New project"), self.new_project, QKeySequence.New
         # )
         self.open_project_action = self.file_menu.addAction(
             FIcon(0xF76F),
@@ -181,8 +189,6 @@ class MainWindow(QMainWindow):
 
         self.file_menu.addSeparator()
 
-
-
         self.file_menu.addSeparator()
 
         self.file_menu.addSeparator()
@@ -197,6 +203,12 @@ class MainWindow(QMainWindow):
         self.edit_menu.addSeparator()
         self.edit_menu.addAction(
             FIcon(0xF486), "Select all", self.select_all, QKeySequence.SelectAll
+        )
+        self.edit_menu.addSeparator()
+        self.restore_default_columns_action = self.edit_menu.addAction(
+            FIcon(0xF459),
+            self.tr("Restaurer colonnes par défaut"),
+            self.restore_default_columns,
         )
 
         ## View
@@ -223,8 +235,9 @@ class MainWindow(QMainWindow):
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         # self.toolbar.addAction(self.new_project_action)
         self.toolbar.addAction(self.open_project_action)
-        #self.toolbar.addAction(FIcon(0xF40A),"Run", self.execute_vql).setShortcuts([Qt.CTRL + Qt.Key_R, QKeySequence.Refresh])
+        # self.toolbar.addAction(FIcon(0xF40A),"Run", self.execute_vql).setShortcuts([Qt.CTRL + Qt.Key_R, QKeySequence.Refresh])
         self.toolbar.addSeparator()
+        self.toolbar.addAction(self.restore_default_columns_action)
 
     # def add_tab_view(self, widget):
     #     """Add the given widget to the current (QTabWidget),
@@ -276,7 +289,9 @@ class MainWindow(QMainWindow):
         if not saved_columns:
             saved_columns = INITIAL_COLUMNS
         setup_columns = [x for x in saved_columns if x in present_fields]
-        setup_columns += [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
+        setup_columns += [
+            ("genotype", s["name"], "gt") for s in sql.get_samples(self.conn)
+        ]
         self.query_model.columns = setup_columns
         self.query_model.load()
 
@@ -284,6 +299,15 @@ class MainWindow(QMainWindow):
             _plugin.on_open_project(self.conn)
 
         self.save_recent_project(filepath)
+
+    def restore_default_columns(self):
+        present_fields = set(f["name"] for f in sql.get_fields(self.conn))
+        setup_columns = [x for x in INITIAL_COLUMNS if x in present_fields]
+        setup_columns += [
+            ("genotype", s["name"], "gt") for s in sql.get_samples(self.conn)
+        ]
+        self.query_model.columns = setup_columns
+        self.query_model.load()
 
     def save_recent_project(self, path):
         """Save current project into QSettings
@@ -324,13 +348,12 @@ class MainWindow(QMainWindow):
         """ Setup recent menu """
         self.recent_files_menu.clear()
         for path in self.get_recent_projects():
-            self.recent_files_menu.addAction(path,self.on_recent_project_clicked)
+            self.recent_files_menu.addAction(path, self.on_recent_project_clicked)
 
     def on_recent_project_clicked(self):
         """Slot to load a recent project"""
         action = self.sender()
         self.open(action.text())
-
 
     # def handle_plugin_message(self, message):
     #     """Slot to display message from plugin in the status bar"""
@@ -370,7 +393,6 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.status_bar.showMessage(e.__class__.__name__ + ": " + str(e))
                 raise
-
 
     def show_settings(self):
         """Slot to show settings window"""
@@ -428,7 +450,10 @@ class MainWindow(QMainWindow):
             app_settings.setValue("windowState", self.saveState())
             # Hack : save current columns, if a project is opened
             if self.query_model.builder:
-                app_settings.setValue("userColumns", [x for x in self.query_model.columns if type(x) is not tuple])
+                app_settings.setValue(
+                    "userColumns",
+                    [x for x in self.query_model.columns if type(x) is not tuple],
+                )
 
     def read_settings(self):
         """Restore the state of this mainwindow's toolbars and dockwidgets
