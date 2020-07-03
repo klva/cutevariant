@@ -4,6 +4,7 @@ import os
 import sys
 import importlib
 import glob
+import signal
 
 # Qt imports
 from PySide2.QtCore import Qt, QSettings, QByteArray, QDir, Slot
@@ -93,9 +94,12 @@ class MainWindow(QMainWindow):
     #     #self.open("test.db")
 
         self.query_model.changed.connect(self.on_query_model_changed)
+        signal.signal(signal.SIGTERM, self.sigterm_handler)
 
-
-
+    def sigterm_handler(self, signum, frame):
+        """Called by the signals module when a sigterm is received. Ensure that state is saved when being terminated"""
+        print("SIGTERM received, exiting", file=sys.stderr)
+        self.close()
 
     def setup_ui(self):
         # Setup menubar

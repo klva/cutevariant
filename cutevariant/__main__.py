@@ -27,6 +27,7 @@ from PySide2.QtCore import (
     QTranslator,
     QCommandLineParser,
     QCommandLineOption,
+    QTimer,
 )
 from PySide2.QtWidgets import QApplication
 
@@ -51,7 +52,7 @@ def main(app : QApplication):
     QCoreApplication.setApplicationName("cutevariant")
     QCoreApplication.setApplicationVersion(__version__)
 
-   
+
     # Process command line arguments
     process_arguments(app)
 
@@ -157,5 +158,10 @@ def process_arguments(app):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main(app)
+    # Hack to let the interpreter check for signals outside of the QT event
+    # loop at regular intervals
+    timer = QTimer()
+    timer.start(1000)
+    timer.timeout.connect(lambda: None)
 
     app.exec_()
