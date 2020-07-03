@@ -422,8 +422,9 @@ class MainWindow(QMainWindow):
             app_settings.setValue("geometry", self.saveGeometry())
             #  TODO: handle UI changes by passing UI_VERSION to saveState()
             app_settings.setValue("windowState", self.saveState())
-            # Hack : save current columns
-            app_settings.setValue("userColumns", [x for x in self.query_model.columns if type(x) is not tuple])
+            # Hack : save current columns, if a project is opened
+            if self.query_model.builder:
+                app_settings.setValue("userColumns", [x for x in self.query_model.columns if type(x) is not tuple])
 
     def read_settings(self):
         """Restore the state of this mainwindow's toolbars and dockwidgets
