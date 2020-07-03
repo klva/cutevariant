@@ -268,9 +268,12 @@ class MainWindow(QMainWindow):
         # TODO: rename the class
         self.query_model.conn = self.conn
         present_fields = set(f["name"] for f in sql.get_fields(self.conn))
-        initial_columns = [x for x in INITIAL_COLUMNS if x in present_fields]
-        initial_columns += [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
-        self.query_model.columns = initial_columns
+        saved_columns = app_settings.value("userColumns")
+        if not saved_columns:
+            saved_columns = INITIAL_COLUMNS
+        setup_columns = [x for x in saved_columns if x in present_fields]
+        setup_columns += [('genotype', s['name'], 'gt') for s in sql.get_samples(self.conn)]
+        self.query_model.columns = setup_columns
         self.query_model.load()
 
         for name, _plugin in self.plugins.items():
@@ -419,8 +422,8 @@ class MainWindow(QMainWindow):
             app_settings.setValue("geometry", self.saveGeometry())
             #  TODO: handle UI changes by passing UI_VERSION to saveState()
             app_settings.setValue("windowState", self.saveState())
-
-
+            # Hack : save current columns
+            app_settings.setValue("userColumns", [x for x in self.query_model.columns if type(x) is not tuple])
 
     def read_settings(self):
         """Restore the state of this mainwindow's toolbars and dockwidgets
