@@ -157,9 +157,9 @@ class MainWindow(QMainWindow):
         """Menu bar setup: items and actions"""
         ## File Menu
         self.file_menu = self.menuBar().addMenu(self.tr("&File"))
-        self.new_project_action = self.file_menu.addAction(
-            FIcon(0xF415), self.tr("&New project"), self.new_project, QKeySequence.New
-        )
+        # self.new_project_action = self.file_menu.addAction(
+            # FIcon(0xF415), self.tr("&New project"), self.new_project, QKeySequence.New
+        # )
         self.open_project_action = self.file_menu.addAction(
             FIcon(0xF76F),
             self.tr("&Open project ..."),
@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
         """
         # Tool bar
         self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-        self.toolbar.addAction(self.new_project_action)
+        # self.toolbar.addAction(self.new_project_action)
         self.toolbar.addAction(self.open_project_action)
         #self.toolbar.addAction(FIcon(0xF40A),"Run", self.execute_vql).setShortcuts([Qt.CTRL + Qt.Key_R, QKeySequence.Refresh])
         self.toolbar.addSeparator()
