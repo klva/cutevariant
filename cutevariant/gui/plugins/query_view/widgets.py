@@ -550,10 +550,13 @@ discussion.
         message_box.setButtonText(QMessageBox.Cancel, "Annuler")
         if message_box.exec_() == QMessageBox.Ok:
             db_path = conn.execute("PRAGMA database_list").fetchone()[2]
-            base_path = os.path.dirname(db_path)
+            folder_path, db_name = os.path.split(db_path)
+            # Strip .db
+            if db_name.endswith(".db"):
+                db_name = db_name[:-3]
             date = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
-            export_name = f"export_{getpass.getuser()}_{date}.tsv"
-            with open(os.path.join(base_path, export_name), "w") as device:
+            export_name = f"export_{db_name}_{getpass.getuser()}_{date}.tsv"
+            with open(os.path.join(folder_path, export_name), "w") as device:
                 AuragenWriter(device).save(conn)
             QMessageBox.information(
                 self,
@@ -562,7 +565,7 @@ discussion.
                 "va quitter. Vous pouvez ouvrir un autre dossier en utilisant "
                 "le bouton 'Reconnect' de guacamole.",
             )
-            qApp.exit()
+            self.mainwindow.close()
 
 
 if __name__ == "__main__":

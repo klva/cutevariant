@@ -17,9 +17,17 @@ class AuragenWriter(AbstractWriter):
         super().__init__(device)
 
     def save(self, conn):
+        # fetch the path of the database
+        # Note that we could get that by passing it in from the caller. But
+        # just in case the filename logic changes in the future, we want to
+        # ensure that we have the real path here
+        cur = conn.cursor()
+        cur.execute("PRAGMA database_list")
+        db_path = cur.fetchall()[0][2]
         print("##!CUTEVARIANT-EXPORT", file=self.device)
-        print("##EXPORT-VERSION=1", file=self.device)
+        print("##EXPORT-VERSION=2", file=self.device)
         print(f"##CUTEVARIANT-VERSION={__version__}", file=self.device)
+        print(f"##DATABASE-PATH={db_path}", file=self.device)
         print(f"##EXPORT-DATE={datetime.datetime.now().isoformat()}", file=self.device)
         print(f"##USER:{getpass.getuser()}", file=self.device)
         columns = list(x["name"] for x in sql.get_field_by_category(conn, "variants"))
