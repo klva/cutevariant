@@ -128,7 +128,13 @@ class RvcfReader(AbstractReader):
             return self.field_info_cache[field]
 
         field_type = "str"
-        if field.startswith("INFO.CSQ"):
+        # XXX TEMPORARY HACK
+        # The fields should be renamed INFO.AURAGEN.transcript_location and
+        # INFO.AURAGEN.protein_location
+        if field in ("transcript_location", "protein_location"):
+            name = field
+            category = "annotations"
+        elif field.startswith("INFO.CSQ"):
             name = field.split(".", maxsplit=2)[2]
             category = "annotations"
         elif field.startswith("INFO.AURAGEN"):
